@@ -5,7 +5,6 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --float-y: 0px;
 }
 
 * {
@@ -31,27 +30,20 @@ body {
   background: #000;
 }
 
-/* =========================================================
-   MAIN SCROLL TRACK
-   ========================================================= */
-
 .track {
   position: relative;
-  width: 100%;
   height: 500vh;
   background: #000;
 }
 
-/* =========================================================
-   FIXED CINEMATIC SCREEN
-   ========================================================= */
-
 .stage {
   position: sticky;
   top: 0;
+
   width: 100%;
   height: 100vh;
   height: 100svh;
+
   overflow: hidden;
 
   display: grid;
@@ -60,9 +52,9 @@ body {
   background: #000;
 }
 
-/* =========================================================
-   VIDEO BACKGROUND
-   ========================================================= */
+/* =========================
+   VIDEO
+   ========================= */
 
 .video {
   position: absolute;
@@ -79,13 +71,14 @@ body {
   background: #000;
 
   z-index: 1;
+
   pointer-events: none;
   user-select: none;
 }
 
-/* =========================================================
+/* =========================
    INVITATION
-   ========================================================= */
+   ========================= */
 
 .invitation {
   position: absolute;
@@ -93,12 +86,8 @@ body {
   left: 50%;
   top: 50%;
 
-  /*
-    حجم أصغر للدعوة.
-    يمكنك تغييره لاحقًا بسهولة من هنا فقط.
-  */
-  width: min(68vw, 500px);
-  height: min(68vh, 500px);
+  width: min(78vw, 620px);
+  height: min(78vh, 620px);
 
   z-index: 3;
 
@@ -107,20 +96,14 @@ body {
   pointer-events: none;
   user-select: none;
 
-  /*
-    React يتحكم في translate/scale أثناء التمرير،
-    لذلك لا نضع animation على هذا العنصر نفسه.
-  */
-  transform: translate(-50%, -50%) scale(0.92);
+  transform:
+    translate(-50%, -50%)
+    scale(0.92);
 
-  transform-origin: center center;
+  transform-origin: center;
 
   will-change: transform, opacity;
 }
-
-/* =========================================================
-   INVITATION INNER
-   ========================================================= */
 
 .invitation-inner {
   position: relative;
@@ -132,14 +115,11 @@ body {
   align-items: center;
   justify-content: center;
 
-  transform: translateY(var(--float-y, 0px));
+  transform:
+    translateY(var(--float-y, 0px));
 
   will-change: transform;
 }
-
-/* =========================================================
-   INVITATION IMAGE
-   ========================================================= */
 
 .invitation-inner > img {
   display: block;
@@ -153,17 +133,18 @@ body {
   pointer-events: none;
   user-select: none;
 
-  /*
-    حركة خفيفة جدًا حتى لا تبدو الدعوة جامدة.
-  */
-  animation: invitationFloat 4.5s ease-in-out infinite;
+  animation:
+    invitationFloat
+    4.5s
+    ease-in-out
+    infinite;
 
   will-change: transform;
 }
 
-/* =========================================================
+/* =========================
    FLOATING ANIMATION
-   ========================================================= */
+   ========================= */
 
 @keyframes invitationFloat {
   0%,
@@ -176,9 +157,9 @@ body {
   }
 }
 
-/* =========================================================
+/* =========================
    INVITATION TEXT
-   ========================================================= */
+   ========================= */
 
 .invitation-copy {
   position: absolute;
@@ -197,8 +178,6 @@ body {
   pointer-events: none;
 }
 
-/* Small heading */
-
 .invitation-kicker {
   margin: 0 0 0.4rem;
 
@@ -211,8 +190,6 @@ body {
   text-transform: uppercase;
 }
 
-/* Main name */
-
 .invitation-name {
   margin: 0;
 
@@ -224,8 +201,6 @@ body {
   line-height: 0.95;
 }
 
-/* Secondary line */
-
 .invitation-line {
   margin: 0.45rem 0 0;
 
@@ -235,8 +210,6 @@ body {
 
   line-height: 1.1;
 }
-
-/* Date */
 
 .invitation-date {
   margin: 0.8rem 0 0;
@@ -248,8 +221,6 @@ body {
   line-height: 1.2;
 }
 
-/* Time / Place */
-
 .invitation-details {
   margin: 0.35rem 0 0;
 
@@ -258,12 +229,13 @@ body {
   font-size: clamp(9px, 1vw, 12px);
 
   letter-spacing: 0.08em;
+
   line-height: 1.5;
 }
 
-/* =========================================================
+/* =========================
    SCROLL HINT
-   ========================================================= */
+   ========================= */
 
 .scroll-hint {
   position: absolute;
@@ -283,16 +255,15 @@ body {
   font-weight: 500;
 
   letter-spacing: 0.24em;
+
   text-transform: uppercase;
 
   white-space: nowrap;
 
   pointer-events: none;
 
-  will-change: opacity, transform;
+  will-change: opacity;
 }
-
-/* Small visual line under the hint */
 
 .scroll-hint::after {
   content: "";
@@ -306,7 +277,11 @@ body {
 
   background: rgba(255, 255, 255, 0.65);
 
-  animation: hintPulse 1.8s ease-in-out infinite;
+  animation:
+    hintPulse
+    1.8s
+    ease-in-out
+    infinite;
 }
 
 @keyframes hintPulse {
@@ -322,35 +297,19 @@ body {
   }
 }
 
-/* =========================================================
+/* =========================
    MOBILE
-   ========================================================= */
+   ========================= */
 
 @media (max-width: 700px) {
-  .track {
-    height: 500vh;
-  }
-
-  .stage {
-    width: 100%;
-    height: 100vh;
-    height: 100svh;
-  }
-
-  /*
-    على الهاتف نجعل الفيديو يغطي الشاشة.
-  */
   .video {
     object-fit: cover;
     object-position: center;
   }
 
-  /*
-    الدعوة أصغر على الهاتف.
-  */
   .invitation {
-    width: min(72vw, 360px);
-    height: min(72vh, 360px);
+    width: min(82vw, 430px);
+    height: min(82vh, 430px);
   }
 
   .invitation-copy {
@@ -386,14 +345,14 @@ body {
   }
 }
 
-/* =========================================================
+/* =========================
    VERY SMALL PHONES
-   ========================================================= */
+   ========================= */
 
 @media (max-width: 380px) {
   .invitation {
-    width: 68vw;
-    height: 68vw;
+    width: 76vw;
+    height: 76vw;
   }
 
   .invitation-name {
@@ -413,14 +372,14 @@ body {
   }
 }
 
-/* =========================================================
+/* =========================
    LANDSCAPE PHONES
-   ========================================================= */
+   ========================= */
 
 @media (max-height: 500px) and (orientation: landscape) {
   .invitation {
-    width: min(48vh, 330px);
-    height: min(48vh, 330px);
+    width: min(58vh, 400px);
+    height: min(58vh, 400px);
   }
 
   .invitation-name {
@@ -440,9 +399,9 @@ body {
   }
 }
 
-/* =========================================================
-   ACCESSIBILITY / REDUCED MOTION
-   ========================================================= */
+/* =========================
+   REDUCED MOTION
+   ========================= */
 
 @media (prefers-reduced-motion: reduce) {
   html {
