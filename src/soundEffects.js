@@ -2,8 +2,8 @@ import { ENVELOPE_SOUND_PATH, MUSIC_PATH, WARM_BELLS_PATH } from "./config.js";
 
 /**
  * EnvelopeSoundManager
- * Manages paper friction, envelope flap opening, soft warm bells,
- * and the magical music box melody without any harsh ringing sounds.
+ * Manages paper friction, envelope flap opening, warm celebration bells,
+ * and the magical music box melody.
  */
 class EnvelopeSoundManager {
   constructor() {
@@ -100,14 +100,12 @@ class EnvelopeSoundManager {
   }
 
   /**
-   * Synthesize warm, soft celebration bells in real-time using rounded sine waves.
-   * Completely excludes harsh high-frequency ringing or piercing resonance.
+   * Synthesize warm, soft celebration bells in real-time.
    */
   synthesizeWarmBells(ctx) {
     if (!ctx) return;
     try {
       const now = ctx.currentTime;
-      // Warm chord notes (E4, G#4, B4, E5) - soothing and velvety
       const chord = [
         { f: 329.63, delay: 0.0, gain: 0.28 },
         { f: 415.30, delay: 0.18, gain: 0.24 },
@@ -120,7 +118,6 @@ class EnvelopeSoundManager {
         const gain = ctx.createGain();
         const filter = ctx.createBiquadFilter();
 
-        // Low-pass filter to guarantee NO harsh ringing
         filter.type = "lowpass";
         filter.frequency.setValueAtTime(1400, now + delay);
         filter.Q.setValueAtTime(0.7, now + delay);
@@ -131,7 +128,6 @@ class EnvelopeSoundManager {
         const startTime = now + delay;
         const duration = 2.2;
 
-        // Soft attack (prevents click/sharp attack), smooth decay
         gain.gain.setValueAtTime(0.001, startTime);
         gain.gain.linearRampToValueAtTime(noteGain, startTime + 0.04);
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
@@ -143,9 +139,7 @@ class EnvelopeSoundManager {
         osc.start(startTime);
         osc.stop(startTime + duration);
       });
-    } catch (e) {
-      // Audio fallback
-    }
+    } catch (e) {}
   }
 
   /**
@@ -190,14 +184,9 @@ class EnvelopeSoundManager {
 
       noise.start(now);
       noise.stop(now + duration);
-    } catch (e) {
-      // Audio fallback
-    }
+    } catch (e) {}
   }
 
-  /**
-   * Plays the paper friction & envelope flap opening sound.
-   */
   playEnvelopeFlapSound() {
     if (this.isMuted) return;
 
@@ -234,9 +223,6 @@ class EnvelopeSoundManager {
     }
   }
 
-  /**
-   * Plays warm, soft celebration bells (no harsh ringing) when the invitation card emerges.
-   */
   playWarmBells() {
     if (this.isMuted) return;
 
@@ -267,9 +253,6 @@ class EnvelopeSoundManager {
     }
   }
 
-  /**
-   * Controls the magical music box melody smoothly as user scrolls.
-   */
   updateMusicProgress(progress) {
     if (this.isMuted || !this.musicAudioElement) return;
 
@@ -277,7 +260,6 @@ class EnvelopeSoundManager {
       if (this.musicAudioElement.paused) {
         this.musicAudioElement.play().catch(() => {});
       }
-      // Smooth fade-in: gradually rises to comfortable 0.50 volume
       const musicVol = Math.min(0.50, Math.max(0, (progress - 0.25) * 0.75));
       this.musicAudioElement.volume = musicVol;
     } else {
