@@ -1,155 +1,85 @@
-import { useEffect, useRef, useState } from "react";
-import { VIDEO_PATH, CARD_IMAGE_PATH, INVITE } from "./config.js";
+import { useCallback, useEffect, useRef } from "react";
+import {
+  VIDEO_PATH,
+  CARD_IMAGE_PATH,
+  INVITE,
+} from "./config.js";
 
 const INVITE_START = 5;
 
+const clamp = (value, min = 0, max = 1) =>
+  Math.min(max, Math.max(min, value));
+
+const ease = (t) => t * t * (3 - 2 * t);
+
 export default function App() {
-  const videoRef = useRef(null);
-  const stageRef = useRef(null);
+  const track = useRef(null);
+  const video = useRef(null);
+  const card = useRef(null);
+  const hint = useRef(null);
 
-  const [ready, setReady] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
+  const updateScene = useCallback((progress) => {
+    const v = video.current;
+    const invitation = card.current;
+    const scrollHint = hint.current;
 
-  useEffect(() => {
-    const video = videoRef.current;
-    const stage = stageRef.current;
-
-    if (!video || !stage) return;
-
-    let startedOnce = false;
-
-    const startExperience = () => {
-      if (startedOnce) return;
-
-      startedOnce = true;
-      setStarted(true);
-
-      video.play().catch(() => {
-        // بعض المتصفحات تمنع التشغيل حتى يحدث تفاعل من المستخدم
-      });
-    };
-
-    const handleLoaded = () => {
-      setReady(true);
-
-      // لا يبدأ الفيديو تلقائيًا
-      video.pause();
-      video.currentTime = 0;
-    };
-
-    const handleTimeUpdate = () => {
-      if (video.currentTime >= INVITE_START) {
-        setShowInvite(true);
-      }
-    };
-
-    const handleEnded = () => {
-      setShowInvite(true);
-    };
+    if (!v || !invitation) return;
 
     /*
-     * على الهاتف:
-     * أول سحب يبدأ التجربة.
+     * الـ scroll هو الـ timeline.
+     *
+     * بداية الصفحة = 00:00
+     * نهاية الصفحة = نهاية الفيديو
      */
-    const handleTouchStart = () => {
-      startExperience();
-    };
+    const duration = v.duration || 6;
+    const currentTime = progress * duration;
 
     /*
-     * على الكمبيوتر:
-     * أول Scroll يبدأ الفيديو.
+     * التحكم في الفيديو عن طريق الـ scroll
      */
-    const handleWheel = () => {
-      startExperience();
-    };
-
-    video.addEventListener("loadeddata", handleLoaded);
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    video.addEventListener("ended", handleEnded);
-
-    stage.addEventListener("touchstart", handleTouchStart, {
-      passive: true,
-    });
-
-    stage.addEventListener("wheel", handleWheel, {
-      passive: true,
-    });
-
-    if (video.readyState >= 2) {
-      handleLoaded();
+    if (
+      Math.abs(v.currentTime - currentTime) > 0.01
+    ) {
+      v.currentTime = Math.min(
+        currentTime,
+        Math.max(0, duration - 0.02)
+      );
     }
 
-    return () => {
-      video.removeEventListener("loadeddata", handleLoaded);
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-      video.removeEventListener("ended", handleEnded);
+    /*
+     * الدعوة تبدأ عند الثانية 5
+     */
+    const inviteProgress = clamp(
+      (currentTime - INVITE_START) /
+        Math.max(0.01, duration - INVITE_START)
+    );
 
-      stage.removeEventListener("touchstart", handleTouchStart);
-      stage.removeEventListener("wheel", handleWheel);
-    };
-  }, []);
+    const reveal = ease(inviteProgress);
 
-  return (
-    <main className="page">
-      <section
-        ref={stageRef}
-        className={`stage ${started ? "started" : ""}`}
-        aria-label="Birthday invitation"
-      >
-        {/* الفيديو */}
-        <video
-          ref={videoRef}
-          src={VIDEO_PATH}
-          muted
-          playsInline
-          preload="auto"
-          aria-label="Invitation video"
-        />
+    /*
+     * ظهور الدعوة
+     */
+    invitation.style.opacity = reveal;
 
-        {/* الدعوة */}
-        <div
-          className={`invitation-overlay ${
-            showInvite ? "show" : ""
-          }`}
-          aria-hidden={!showInvite}
-        >
-          <div className="floating-invitation">
-            <img
-              src={CARD_IMAGE_PATH}
-              alt="Birthday invitation"
-              decoding="async"
-            />
+    /*
+     * تدخل من الأسفل وتكبر تدريجيًا
+     */
+    const translateY = (1 - reveal) * 35;
+    const scale = 0.92 + reveal * 0.08;
 
-            <div className="invite-text">
-              <p className="kicker">{INVITE.kicker}</p>
+    invitation.style.transform =
+      `translate(-50%, -50%)
+       translateY(${translateY}px)
+       scale(${scale})`;
 
-              <p className="name">{INVITE.name}</p>
+    /*
+     * حركة الطفو
+     */
+    const floatAmount =
+      Math.sin(inviteProgress * Math.PI * 4) *
+      8 *
+      reveal;
 
-              <p className="line">{INVITE.line}</p>
-
-              <i className="rule" />
-
-              <p className="info">{INVITE.date}</p>
-              <p className="info">{INVITE.time}</p>
-              <p className="info">{INVITE.place}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* رسالة البداية */}
-        {!started && ready && (
-          <div className="start-hint">
-            <span>اسحب للبدء</span>
-            <i />
-          </div>
-        )}
-
-        {/* التحميل */}
-        <div className={`loader ${ready ? "off" : ""}`}>
-          ✉
-        </div>
-      </section>
-    </main>
-  );
-}
+    invitation.style.setProperty(
+      "--float-y",
+      `${
