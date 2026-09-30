@@ -1,15 +1,15 @@
 :root {
-  --bg: #0b1024;
-  --rose: #b5647f;
-  --ink: #8a4a61;
-
-  box-sizing: border-box;
+  font-family: "Jost", system-ui, sans-serif;
+  color: #fff;
+  background: #000;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --float-y: 0px;
 }
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html,
@@ -17,101 +17,75 @@ body,
 #root {
   width: 100%;
   min-height: 100%;
-
-  background: var(--bg);
-
-  font-family:
-    "Jost",
-    system-ui,
-    sans-serif;
-
-  font-weight: 300;
+  margin: 0;
+  padding: 0;
 }
 
 html {
+  background: #000;
   scroll-behavior: auto;
 }
 
 body {
   overflow-x: hidden;
+  background: #000;
 }
 
-/* =====================================================
-   SCROLL TIMELINE
-===================================================== */
+/* =========================================================
+   MAIN SCROLL TRACK
+   ========================================================= */
 
 .track {
   position: relative;
-
-  /*
-   * 500vh = مساحة كافية للتحكم
-   * الكامل في Timeline.
-   *
-   * 0%   -> بداية الفيديو
-   * 100% -> نهاية الفيديو
-   */
+  width: 100%;
   height: 500vh;
-
-  background: var(--bg);
+  background: #000;
 }
 
-/* =====================================================
-   STICKY CINEMATIC VIEWPORT
-===================================================== */
+/* =========================================================
+   FIXED CINEMATIC SCREEN
+   ========================================================= */
 
 .stage {
   position: sticky;
-
   top: 0;
-
   width: 100%;
   height: 100vh;
   height: 100svh;
-
   overflow: hidden;
 
   display: grid;
   place-items: center;
 
-  background: var(--bg);
+  background: #000;
 }
 
-/* =====================================================
+/* =========================================================
    VIDEO BACKGROUND
-===================================================== */
+   ========================================================= */
 
-.stage video {
+.video {
   position: absolute;
-
   inset: 0;
 
   width: 100%;
   height: 100%;
 
-  /*
-   * contain يحافظ على كامل إطار الفيديو.
-   */
   object-fit: contain;
+  object-position: center;
 
   display: block;
 
+  background: #000;
+
   z-index: 1;
-
   pointer-events: none;
-
-  /*
-   * لا نريد أي انتقال CSS للفيديو.
-   * الـ scroll يجب أن يشعر المستخدم
-   * بأنه يتحكم في الـ frame مباشرة.
-   */
-  transition: none;
-
-  will-change: contents;
+  user-select: none;
 }
 
-/* =====================================================
-   INVITATION OVERLAY
-===================================================== */
+/* =========================================================
+   INVITATION
+   ========================================================= */
 
 .invitation {
   position: absolute;
@@ -119,45 +93,34 @@ body {
   left: 50%;
   top: 50%;
 
-  width: 100%;
-  height: 100%;
+  /*
+    حجم أصغر للدعوة.
+    يمكنك تغييره لاحقًا بسهولة من هنا فقط.
+  */
+  width: min(68vw, 500px);
+  height: min(68vh, 500px);
 
-  display: grid;
-  place-items: center;
+  z-index: 3;
 
   opacity: 0;
 
-  transform:
-    translate(-50%, -50%)
-    translateY(35px)
-    scale(0.92);
-
-  /*
-   * الفيديو خلف الدعوة.
-   */
-  z-index: 3;
-
   pointer-events: none;
+  user-select: none;
 
   /*
-   * React يتحكم في:
-   * opacity
-   * translateY
-   * scale
-   */
-  will-change:
-    opacity,
-    transform;
+    React يتحكم في translate/scale أثناء التمرير،
+    لذلك لا نضع animation على هذا العنصر نفسه.
+  */
+  transform: translate(-50%, -50%) scale(0.92);
 
-  /*
-   * قيمة قادمة من React.
-   */
-  --scroll-float-y: 0px;
+  transform-origin: center center;
+
+  will-change: transform, opacity;
 }
 
-/* =====================================================
+/* =========================================================
    INVITATION INNER
-===================================================== */
+   ========================================================= */
 
 .invitation-inner {
   position: relative;
@@ -165,21 +128,18 @@ body {
   width: 100%;
   height: 100%;
 
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  /*
-   * React-controlled float
-   */
-  transform:
-    translateY(var(--scroll-float-y));
+  transform: translateY(var(--float-y, 0px));
 
   will-change: transform;
 }
 
-/* =====================================================
+/* =========================================================
    INVITATION IMAGE
-===================================================== */
+   ========================================================= */
 
 .invitation-inner > img {
   display: block;
@@ -188,317 +148,309 @@ body {
   height: 100%;
 
   object-fit: contain;
+  object-position: center;
 
-  filter:
-    drop-shadow(
-      0 25px 50px
-      rgba(0, 0, 0, 0.28)
-    );
+  pointer-events: none;
+  user-select: none;
 
   /*
-   * Float مستمر وهادئ.
-   *
-   * هذا مختلف عن reveal الذي يتحكم فيه React.
-   */
-  animation:
-    floatingInvitation
-    4s
-    ease-in-out
-    infinite;
+    حركة خفيفة جدًا حتى لا تبدو الدعوة جامدة.
+  */
+  animation: invitationFloat 4.5s ease-in-out infinite;
 
   will-change: transform;
 }
 
-/* =====================================================
+/* =========================================================
    FLOATING ANIMATION
-===================================================== */
+   ========================================================= */
 
-@keyframes floatingInvitation {
-  0% {
-    transform:
-      translateY(0);
+@keyframes invitationFloat {
+  0%,
+  100% {
+    transform: translateY(0);
   }
 
   50% {
-    transform:
-      translateY(-8px);
-  }
-
-  100% {
-    transform:
-      translateY(0);
+    transform: translateY(-5px);
   }
 }
 
-/* =====================================================
+/* =========================================================
    INVITATION TEXT
-===================================================== */
+   ========================================================= */
 
-.invite-text {
+.invitation-copy {
   position: absolute;
 
   left: 50%;
   top: 50%;
 
-  transform:
-    translate(-50%, -50%);
+  width: 70%;
 
-  width: min(64%, 430px);
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-  justify-content: center;
+  transform: translate(-50%, -50%);
 
   text-align: center;
 
-  color: var(--ink);
+  color: #2f241c;
 
   pointer-events: none;
 }
 
-/* =====================================================
-   KICKER
-===================================================== */
+/* Small heading */
 
-.kicker {
-  font-size:
-    clamp(11px, 3vw, 18px);
+.invitation-kicker {
+  margin: 0 0 0.4rem;
 
-  letter-spacing:
-    0.35em;
+  font-family: "Jost", sans-serif;
 
-  margin-right:
-    -0.35em;
+  font-size: clamp(9px, 1.1vw, 13px);
+  font-weight: 600;
 
-  color:
-    var(--rose);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
-/* =====================================================
-   NAME
-===================================================== */
+/* Main name */
 
-.name {
-  font-family:
-    "Great Vibes",
-    cursive;
+.invitation-name {
+  margin: 0;
 
-  font-size:
-    clamp(55px, 18vw, 120px);
+  font-family: "Great Vibes", cursive;
 
-  line-height:
-    1.05;
+  font-size: clamp(34px, 5vw, 64px);
+  font-weight: 400;
 
-  margin-top:
-    2vw;
-
-  color:
-    var(--rose);
-
-  text-shadow:
-    0 3px 10px
-    rgba(181, 100, 127, 0.15);
+  line-height: 0.95;
 }
 
-/* =====================================================
-   LINE
-===================================================== */
+/* Secondary line */
 
-.line {
-  font-family:
-    "Cormorant Garamond",
-    Georgia,
-    serif;
+.invitation-line {
+  margin: 0.45rem 0 0;
 
-  font-style:
-    italic;
+  font-family: "Cormorant Garamond", serif;
 
-  font-size:
-    clamp(19px, 6vw, 40px);
+  font-size: clamp(18px, 2.2vw, 30px);
 
-  margin-top:
-    1vw;
+  line-height: 1.1;
 }
 
-/* =====================================================
-   RULE
-===================================================== */
+/* Date */
 
-.rule {
-  display: block;
+.invitation-date {
+  margin: 0.8rem 0 0;
 
-  width:
-    15vw;
+  font-family: "Cormorant Garamond", serif;
 
-  height:
-    1px;
+  font-size: clamp(14px, 1.7vw, 21px);
 
-  background:
-    var(--rose);
-
-  opacity:
-    0.6;
-
-  margin:
-    4vw 0;
+  line-height: 1.2;
 }
 
-/* =====================================================
-   INFO
-===================================================== */
+/* Time / Place */
 
-.info {
-  font-size:
-    clamp(12px, 3.6vw, 22px);
+.invitation-details {
+  margin: 0.35rem 0 0;
 
-  letter-spacing:
-    0.14em;
+  font-family: "Jost", sans-serif;
 
-  line-height:
-    1.9;
+  font-size: clamp(9px, 1vw, 12px);
+
+  letter-spacing: 0.08em;
+  line-height: 1.5;
 }
 
-/* =====================================================
+/* =========================================================
    SCROLL HINT
-===================================================== */
+   ========================================================= */
 
 .scroll-hint {
   position: absolute;
 
   left: 50%;
+  bottom: clamp(20px, 4vh, 42px);
 
-  bottom:
-    max(
-      28px,
-      env(safe-area-inset-bottom)
-    );
-
-  transform:
-    translateX(-50%);
+  transform: translateX(-50%);
 
   z-index: 5;
 
-  color:
-    #f5f0ea;
+  color: rgba(255, 255, 255, 0.85);
 
-  text-align:
-    center;
+  font-family: "Jost", sans-serif;
 
-  font-size:
-    11px;
+  font-size: 10px;
+  font-weight: 500;
 
-  letter-spacing:
-    0.4em;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
 
-  white-space:
-    nowrap;
+  white-space: nowrap;
 
-  pointer-events:
-    none;
+  pointer-events: none;
 
-  will-change:
-    opacity;
+  will-change: opacity, transform;
 }
 
-.scroll-hint i {
+/* Small visual line under the hint */
+
+.scroll-hint::after {
+  content: "";
+
   display: block;
 
-  width: 1px;
+  width: 28px;
+  height: 1px;
 
-  height: 38px;
+  margin: 8px auto 0;
 
-  margin:
-    12px auto 0;
+  background: rgba(255, 255, 255, 0.65);
 
-  background:
-    linear-gradient(
-      #f3d9e1,
-      transparent
-    );
-
-  animation:
-    scrollLine
-    2.2s
-    ease-in-out
-    infinite;
-
-  transform-origin:
-    top;
+  animation: hintPulse 1.8s ease-in-out infinite;
 }
 
-/* =====================================================
-   SCROLL HINT ANIMATION
-===================================================== */
-
-@keyframes scrollLine {
-  0% {
-    transform:
-      scaleY(0);
-
-    opacity:
-      0;
-  }
-
-  40% {
-    opacity:
-      1;
-  }
-
+@keyframes hintPulse {
+  0%,
   100% {
-    transform:
-      scaleY(1);
+    opacity: 0.35;
+    transform: scaleX(0.7);
+  }
 
-    opacity:
-      0;
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
   }
 }
 
-/* =====================================================
+/* =========================================================
    MOBILE
-===================================================== */
+   ========================================================= */
 
 @media (max-width: 700px) {
   .track {
     height: 500vh;
   }
 
-  /*
-   * على الهاتف نستخدم cover
-   * حتى يملأ الفيديو الشاشة.
-   *
-   * إذا كان الفيديو يحتوي عناصر مهمة
-   * قرب الأطراف، غيّرها إلى contain.
-   */
-  .stage video {
-    object-fit: cover;
+  .stage {
+    width: 100%;
+    height: 100vh;
+    height: 100svh;
   }
 
-  .invite-text {
+  /*
+    على الهاتف نجعل الفيديو يغطي الشاشة.
+  */
+  .video {
+    object-fit: cover;
+    object-position: center;
+  }
+
+  /*
+    الدعوة أصغر على الهاتف.
+  */
+  .invitation {
+    width: min(72vw, 360px);
+    height: min(72vh, 360px);
+  }
+
+  .invitation-copy {
     width: 68%;
   }
 
+  .invitation-kicker {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+  }
+
+  .invitation-name {
+    font-size: clamp(30px, 10vw, 46px);
+  }
+
+  .invitation-line {
+    font-size: clamp(16px, 5vw, 24px);
+  }
+
+  .invitation-date {
+    margin-top: 0.55rem;
+    font-size: clamp(12px, 3.7vw, 17px);
+  }
+
+  .invitation-details {
+    font-size: 8px;
+  }
+
   .scroll-hint {
-    bottom:
-      max(
-        28px,
-        env(safe-area-inset-bottom)
-      );
+    bottom: 20px;
+    font-size: 9px;
+    letter-spacing: 0.2em;
   }
 }
 
-/* =====================================================
-   REDUCED MOTION
-===================================================== */
+/* =========================================================
+   VERY SMALL PHONES
+   ========================================================= */
 
-@media (prefers-reduced-motion: reduce) {
-  .invitation-inner > img {
-    animation: none;
+@media (max-width: 380px) {
+  .invitation {
+    width: 68vw;
+    height: 68vw;
   }
 
-  .scroll-hint i {
+  .invitation-name {
+    font-size: 29px;
+  }
+
+  .invitation-line {
+    font-size: 15px;
+  }
+
+  .invitation-date {
+    font-size: 11px;
+  }
+
+  .invitation-details {
+    font-size: 7px;
+  }
+}
+
+/* =========================================================
+   LANDSCAPE PHONES
+   ========================================================= */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .invitation {
+    width: min(48vh, 330px);
+    height: min(48vh, 330px);
+  }
+
+  .invitation-name {
+    font-size: clamp(26px, 7vh, 42px);
+  }
+
+  .invitation-line {
+    font-size: clamp(14px, 4vh, 22px);
+  }
+
+  .invitation-date {
+    font-size: clamp(10px, 2.8vh, 15px);
+  }
+
+  .scroll-hint {
+    bottom: 10px;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY / REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .invitation-inner > img,
+  .scroll-hint::after {
     animation: none;
   }
 }
