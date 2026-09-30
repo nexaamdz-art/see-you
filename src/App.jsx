@@ -5,11 +5,8 @@ import {
   INVITE,
   HINT,
 } from "./config.js";
-import { soundManager } from "./soundEffects.js";
 
 const INVITE_START = 5;
-const FLAP_OPEN_PROGRESS = 0.035;
-const FLAP_CLOSE_PROGRESS = 0.015;
 
 const clamp = (value, min = 0, max = 1) =>
   Math.min(max, Math.max(min, value));
@@ -28,24 +25,12 @@ export default function App() {
   const targetTimeRef = useRef(0);
   const isSeekingRef = useRef(false);
   const seekTimeoutRef = useRef(null);
-  const hasPlayedFlapSoundRef = useRef(false);
-  const hasPlayedBellsRef = useRef(false);
 
   useEffect(() => {
     const v = video.current;
     const t = track.current;
     const invitation = card.current;
     const scrollHint = hint.current;
-
-    // Unlock audio context on initial interaction
-    const unlockAudio = () => {
-      soundManager.unlock();
-    };
-
-    window.addEventListener("pointerdown", unlockAudio, { passive: true, once: true });
-    window.addEventListener("touchstart", unlockAudio, { passive: true, once: true });
-    window.addEventListener("wheel", unlockAudio, { passive: true, once: true });
-    window.addEventListener("keydown", unlockAudio, { passive: true, once: true });
 
     if (!v || !t) return;
 
@@ -91,25 +76,6 @@ export default function App() {
 
       performSeek();
 
-      // Trigger paper friction and envelope flap sound effect once in sync with opening motion
-      if (progress >= FLAP_OPEN_PROGRESS && !hasPlayedFlapSoundRef.current) {
-        hasPlayedFlapSoundRef.current = true;
-        soundManager.playEnvelopeFlapSound();
-      } else if (progress <= FLAP_CLOSE_PROGRESS) {
-        // Reset when envelope is fully closed at top
-        hasPlayedFlapSoundRef.current = false;
-        hasPlayedBellsRef.current = false;
-      }
-
-      // Trigger warm celebration bells when the invitation card emerges and ascends
-      if (progress >= 0.72 && !hasPlayedBellsRef.current) {
-        hasPlayedBellsRef.current = true;
-        soundManager.playWarmBells();
-      }
-
-      // Update ambient magical music box melody smoothly
-      soundManager.updateMusicProgress(progress);
-
       if (invitation) {
         /*
           Invitation starts appearing at 5 seconds.
@@ -144,8 +110,6 @@ export default function App() {
     };
 
     const handleScroll = () => {
-      soundManager.unlock();
-
       if (frame !== null) return;
 
       frame = requestAnimationFrame(() => {
@@ -184,10 +148,6 @@ export default function App() {
         cancelAnimationFrame(frame);
       }
       clearTimeout(seekTimeoutRef.current);
-      window.removeEventListener("pointerdown", unlockAudio);
-      window.removeEventListener("touchstart", unlockAudio);
-      window.removeEventListener("wheel", unlockAudio);
-      window.removeEventListener("keydown", unlockAudio);
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
       v.removeEventListener("loadedmetadata", handleLoadedMetadata);
@@ -196,7 +156,6 @@ export default function App() {
   }, []);
 
   const handleHintClick = () => {
-    soundManager.unlock();
     if (track.current) {
       const scrollableHeight = track.current.offsetHeight - window.innerHeight;
       window.scrollTo({ top: scrollableHeight, behavior: "smooth" });
