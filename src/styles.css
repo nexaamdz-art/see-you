@@ -2,6 +2,7 @@
   --bg: #0b1024;
   --rose: #B5647F;
   --ink: #8A4A61;
+
   box-sizing: border-box;
 }
 
@@ -14,8 +15,9 @@ html,
 body,
 #root {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   background: var(--bg);
+
   font-family: "Jost", system-ui, sans-serif;
   font-weight: 300;
 }
@@ -24,29 +26,42 @@ body {
   overflow: hidden;
 }
 
-/* الصفحة */
+/* =====================================================
+   الصفحة
+   ===================================================== */
+
 .page {
   width: 100%;
   height: 100vh;
   height: 100svh;
+
   background: var(--bg);
 }
 
-/* مساحة الفيديو */
+/* =====================================================
+   الفيديو
+   ===================================================== */
+
 .stage {
   position: relative;
+
   width: 100%;
   height: 100vh;
   height: 100svh;
+
   overflow: hidden;
+
   display: grid;
   place-items: center;
+
   background: var(--bg);
+
+  touch-action: pan-y;
 }
 
-/* الفيديو */
 .stage video {
   position: absolute;
+
   inset: 0;
 
   width: 100%;
@@ -57,9 +72,6 @@ body {
   z-index: 1;
 }
 
-/*
-  على الهاتف نملأ الشاشة بالفيديو.
-*/
 @media (max-width: 700px) {
   .stage video {
     object-fit: cover;
@@ -86,46 +98,87 @@ body {
 
   pointer-events: none;
 
-  transform: scale(0.98);
+  z-index: 3;
+
+  transform: scale(0.92);
 
   transition:
-    opacity 0.45s ease,
-    transform 0.45s ease,
-    visibility 0s linear 0.45s;
-
-  z-index: 2;
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(.22, 1, .36, 1),
+    visibility 0s linear 0.7s;
 }
 
 /*
-  عند الثانية الخامسة
+   الدعوة تظهر في الثانية الخامسة
 */
 .invitation-overlay.show {
   opacity: 1;
+
   visibility: visible;
 
   transform: scale(1);
 
   transition:
-    opacity 0.45s ease,
-    transform 0.45s ease,
+    opacity 0.7s ease,
+    transform 0.7s cubic-bezier(.22, 1, .36, 1),
     visibility 0s linear 0s;
 }
 
-/*
-  صورة الدعوة تملأ إطار الفيديو
-  بدون أن تتحول إلى صفحة مستقلة.
-*/
-.invitation-overlay > img {
-  display: block;
+/* =====================================================
+   حركة الطفو
+   ===================================================== */
+
+.floating-invitation {
+  position: relative;
 
   width: 100%;
   height: 100%;
 
-  object-fit: contain;
+  display: grid;
+  place-items: center;
+
+  animation: invitationFloat 4s ease-in-out infinite;
+}
+
+/*
+   حركة بسيطة جدًا للأعلى والأسفل
+*/
+@keyframes invitationFloat {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
 }
 
 /* =====================================================
-   النص داخل الدعوة
+   صورة الدعوة
+   ===================================================== */
+
+.floating-invitation > img {
+  display: block;
+
+  /*
+     أكبر وأكثر وضوحًا
+  */
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+
+  filter:
+    drop-shadow(0 18px 35px rgba(0, 0, 0, 0.20))
+    drop-shadow(0 5px 12px rgba(120, 50, 80, 0.15));
+}
+
+/* =====================================================
+   النص
    ===================================================== */
 
 .invite-text {
@@ -136,9 +189,10 @@ body {
 
   transform: translate(-50%, -50%);
 
-  width: min(62%, 420px);
+  width: min(65%, 440px);
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
@@ -151,6 +205,8 @@ body {
   pointer-events: none;
 }
 
+/* العنوان */
+
 .kicker {
   font-size: clamp(11px, 3vw, 18px);
 
@@ -161,32 +217,44 @@ body {
   color: var(--rose);
 }
 
+/* الاسم */
+
 .name {
   font-family: "Great Vibes", cursive;
 
-  font-size: clamp(48px, 17vw, 110px);
+  font-size: clamp(55px, 18vw, 120px);
 
-  line-height: 1.1;
+  line-height: 1.05;
 
-  margin-top: 3vw;
+  margin-top: 2vw;
 
   color: var(--rose);
+
+  text-shadow:
+    0 3px 10px rgba(181, 100, 127, 0.15);
 }
 
+/* السطر */
+
 .line {
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family:
+    "Cormorant Garamond",
+    Georgia,
+    serif;
 
   font-style: italic;
 
-  font-size: clamp(18px, 6vw, 38px);
+  font-size: clamp(19px, 6vw, 40px);
 
   margin-top: 1vw;
 }
 
+/* الخط */
+
 .rule {
   display: block;
 
-  width: 14vw;
+  width: 15vw;
 
   height: 1px;
 
@@ -194,8 +262,10 @@ body {
 
   opacity: 0.6;
 
-  margin: 5vw 0;
+  margin: 4vw 0;
 }
+
+/* المعلومات */
 
 .info {
   font-size: clamp(12px, 3.6vw, 22px);
@@ -206,7 +276,86 @@ body {
 }
 
 /* =====================================================
-   شاشة التحميل
+   رسالة "اسحب للبدء"
+   ===================================================== */
+
+.start-hint {
+  position: absolute;
+
+  left: 50%;
+  bottom: 35px;
+
+  transform: translateX(-50%);
+
+  z-index: 5;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 12px;
+
+  color: #F5F0EA;
+
+  font-size: 12px;
+
+  letter-spacing: 0.25em;
+
+  white-space: nowrap;
+
+  opacity: 0.9;
+
+  animation: hintPulse 2.2s ease-in-out infinite;
+}
+
+.start-hint i {
+  display: block;
+
+  width: 1px;
+  height: 42px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      #F3D9E1,
+      transparent
+    );
+
+  animation: arrowMove 1.8s ease-in-out infinite;
+}
+
+@keyframes hintPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes arrowMove {
+  0% {
+    transform: translateY(-5px);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: translateY(5px);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-5px);
+    opacity: 0.2;
+  }
+}
+
+/* =====================================================
+   التحميل
    ===================================================== */
 
 .loader {
@@ -235,10 +384,41 @@ body {
 }
 
 /* =====================================================
+   الهاتف
+   ===================================================== */
+
+@media (max-width: 700px) {
+  .invite-text {
+    width: 68%;
+  }
+
+  .floating-invitation > img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .start-hint {
+    bottom: 28px;
+  }
+}
+
+/* =====================================================
    تقليل الحركة
    ===================================================== */
 
 @media (prefers-reduced-motion: reduce) {
+  .floating-invitation {
+    animation: none;
+  }
+
+  .start-hint {
+    animation: none;
+  }
+
+  .start-hint i {
+    animation: none;
+  }
+
   .invitation-overlay,
   .invitation-overlay.show {
     transition: none;
