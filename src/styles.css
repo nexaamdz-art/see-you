@@ -178,7 +178,7 @@ body {
   justify-content: center;
 }
 
-/* Small heading above the name */
+/* Small heading */
 
 .invitation-kicker {
   margin: 0 0 clamp(4px, 0.9cqi, 8px);
@@ -195,16 +195,16 @@ body {
   opacity: 0.95;
 }
 
-/* Birthday person's name */
+/* Lina - smaller and elegant */
 
 .invitation-name {
   margin: 5px 0 0;
 
   font-family: "Great Vibes", "Amiri", cursive;
-  font-size: clamp(40px, 13.5cqi, 88px);
+  font-size: clamp(30px, 9cqi, 58px);
   font-weight: 400;
 
-  line-height: 1.15;
+  line-height: 1.2;
   color: #1f150e;
 
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
@@ -213,7 +213,7 @@ body {
   top: 4px;
 }
 
-/* Happy Birthday / birthday message */
+/* Happy Birthday message */
 
 .invitation-line {
   margin: clamp(4px, 0.7cqi, 8px) 0 0;
@@ -358,8 +358,8 @@ body {
   }
 
   .invitation-name {
-    font-size: clamp(40px, 13.5cqi, 76px);
-    line-height: 1.15;
+    font-size: clamp(28px, 9cqi, 42px);
+    line-height: 1.2;
   }
 
   .invitation-line {
@@ -405,7 +405,8 @@ body {
   }
 
   .invitation-name {
-    font-size: clamp(36px, 13cqi, 48px);
+    font-size: clamp(26px, 8.5cqi, 34px);
+    line-height: 1.2;
   }
 
   .invitation-line {
@@ -440,7 +441,8 @@ body {
   }
 
   .invitation-name {
-    font-size: clamp(30px, 9cqi, 48px);
+    font-size: clamp(26px, 7cqi, 38px);
+    line-height: 1.2;
   }
 
   .invitation-line {
