@@ -198,16 +198,19 @@ body {
 /* Birthday person's name */
 
 .invitation-name {
-  margin: 0;
+  margin: 5px 0 0;
 
   font-family: "Great Vibes", "Amiri", cursive;
   font-size: clamp(40px, 13.5cqi, 88px);
   font-weight: 400;
 
   line-height: 1.15;
-
   color: #1f150e;
+
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
+
+  position: relative;
+  top: 4px;
 }
 
 /* Happy Birthday / birthday message */
