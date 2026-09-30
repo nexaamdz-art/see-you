@@ -1,0 +1,24 @@
+:root{--bg:#0b1024;--rose:#B5647F;--ink:#8A4A61;box-sizing:border-box}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);font-family:'Jost',system-ui,sans-serif;font-weight:300}
+.track{height:600vh;position:relative}
+.stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--bg)}
+.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+ -webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)}
+@media(max-width:700px){.stage video{object-fit:cover;-webkit-mask-image:none;mask-image:none}}
+.wash{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 50% 50%,#FBE9EE,#F4D6DD 70%);will-change:opacity}
+.card{position:absolute;left:50%;top:50%;height:min(92svh,142vw);aspect-ratio:497/755;opacity:0;transform:translate(-50%,-50%);
+ container-type:size;box-shadow:0 30px 80px rgba(120,50,80,.25);will-change:transform,opacity}
+.card img{width:100%;height:100%;display:block}
+.invite{position:absolute;left:19%;width:62%;top:33%;height:54%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--ink);opacity:0}
+.kicker{font-size:3cqw;letter-spacing:.35em;margin-right:-.35em;color:var(--rose)}
+.name{font-family:'Great Vibes',cursive;font-size:17cqw;line-height:1.1;margin-top:3cqw;color:var(--rose)}
+.line{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:6cqw;margin-top:1cqw}
+.rule{display:block;width:14cqw;height:1px;background:var(--rose);opacity:.6;margin:5cqw 0}
+.info{font-size:3.6cqw;letter-spacing:.14em;line-height:1.9}
+.hint{position:absolute;bottom:max(28px,env(safe-area-inset-bottom));left:50%;translate:-50% 0;font-size:11px;letter-spacing:.4em;color:#F5F0EA;text-align:center}
+.hint i{display:block;width:1px;height:38px;margin:12px auto 0;background:linear-gradient(#F3D9E1,transparent);animation:drop 2.4s ease-in-out infinite;transform-origin:top}
+@keyframes drop{0%{transform:scaleY(0);opacity:0}40%{opacity:1}100%{transform:scaleY(1);opacity:0}}
+.loader{position:fixed;inset:0;z-index:9;background:var(--bg);display:grid;place-items:center;font-size:28px;color:#E8B8C7;transition:opacity 1.2s ease}
+.loader.off{opacity:0;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.track{height:100vh}.hint i{animation:none}}
