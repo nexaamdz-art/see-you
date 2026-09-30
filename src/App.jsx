@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   VIDEO_PATH,
   CARD_IMAGE_PATH,
@@ -22,87 +22,92 @@ export default function App() {
   const card = useRef(null);
   const hint = useRef(null);
 
-  const updateScene = useCallback((progress) => {
-    const v = video.current;
-    const invitation = card.current;
-    const scrollHint = hint.current;
-
-    if (!v || !invitation) return;
-
-    const duration = v.duration || 6;
-
-    /*
-      Scroll = video timeline
-      0%   -> 0s
-      50%  -> 3s
-      80%  -> 4.8s
-      83.33% -> 5s
-      100% -> 6s
-    */
-    const currentTime = progress * duration;
-
-    if (Math.abs(v.currentTime - currentTime) > 0.01) {
-      v.currentTime = Math.min(
-        currentTime,
-        Math.max(0, duration - 0.02)
-      );
-    }
-
-    /*
-      Invitation starts appearing at 5 seconds.
-    */
-    const inviteProgress = clamp(
-      (currentTime - INVITE_START) /
-        Math.max(0.01, duration - INVITE_START)
-    );
-
-    const reveal = ease(inviteProgress);
-
-    invitation.style.opacity = reveal;
-
-    /*
-      Small movement while appearing.
-    */
-    const translateY = (1 - reveal) * 35;
-
-    const scale = 0.92 + reveal * 0.08;
-
-    invitation.style.transform = `
-      translate(-50%, -50%)
-      translateY(${translateY}px)
-      scale(${scale})
-    `;
-
-    /*
-      Small floating movement.
-    */
-    const floatAmount =
-      Math.sin(inviteProgress * Math.PI * 4) *
-      8 *
-      reveal;
-
-    invitation.style.setProperty(
-      "--float-y",
-      `${floatAmount}px`
-    );
-
-    /*
-      Hide scroll hint gradually.
-    */
-    if (scrollHint) {
-      scrollHint.style.opacity = String(
-        1 - clamp(progress * 8)
-      );
-    }
-  }, []);
+  const targetTimeRef = useRef(0);
+  const isSeekingRef = useRef(false);
+  const seekTimeoutRef = useRef(null);
 
   useEffect(() => {
     const v = video.current;
     const t = track.current;
+    const invitation = card.current;
+    const scrollHint = hint.current;
 
     if (!v || !t) return;
 
+    const performSeek = () => {
+      if (!v || isSeekingRef.current) return;
+
+      const diff = Math.abs(v.currentTime - targetTimeRef.current);
+      if (diff < 0.02) return;
+
+      isSeekingRef.current = true;
+      const duration = v.duration || 6;
+      const target = Math.min(
+        targetTimeRef.current,
+        Math.max(0, duration - 0.02)
+      );
+
+      if (typeof v.fastSeek === "function") {
+        v.fastSeek(target);
+      } else {
+        v.currentTime = target;
+      }
+
+      // Safety fallback if 'seeked' event is delayed
+      clearTimeout(seekTimeoutRef.current);
+      seekTimeoutRef.current = setTimeout(() => {
+        isSeekingRef.current = false;
+        performSeek();
+      }, 70);
+    };
+
+    const handleSeeked = () => {
+      isSeekingRef.current = false;
+      clearTimeout(seekTimeoutRef.current);
+      performSeek();
+    };
+
     let frame = null;
+
+    const updateScene = (progress) => {
+      const duration = v.duration || 6;
+      const currentTime = progress * duration;
+      targetTimeRef.current = currentTime;
+
+      performSeek();
+
+      if (invitation) {
+        /*
+          Invitation starts appearing at 5 seconds.
+        */
+        const inviteProgress = clamp(
+          (currentTime - INVITE_START) /
+            Math.max(0.01, duration - INVITE_START)
+        );
+
+        const reveal = ease(inviteProgress);
+
+        invitation.style.opacity = reveal;
+
+        const translateY = (1 - reveal) * 35;
+        const scale = 0.92 + reveal * 0.08;
+
+        invitation.style.transform = `
+          translate(-50%, -50%)
+          translateY(${translateY}px)
+          scale(${scale})
+        `;
+
+        const floatAmount =
+          Math.sin(inviteProgress * Math.PI * 4) * 8 * reveal;
+
+        invitation.style.setProperty("--float-y", `${floatAmount}px`);
+      }
+
+      if (scrollHint) {
+        scrollHint.style.opacity = String(1 - clamp(progress * 8));
+      }
+    };
 
     const handleScroll = () => {
       if (frame !== null) return;
@@ -111,13 +116,8 @@ export default function App() {
         frame = null;
 
         const rect = t.getBoundingClientRect();
-
-        const scrollableHeight =
-          t.offsetHeight - window.innerHeight;
-
-        const progress = clamp(
-          -rect.top / Math.max(1, scrollableHeight)
-        );
+        const scrollableHeight = t.offsetHeight - window.innerHeight;
+        const progress = clamp(-rect.top / Math.max(1, scrollableHeight));
 
         updateScene(progress);
       });
@@ -130,25 +130,16 @@ export default function App() {
     const handleLoadedMetadata = () => {
       v.pause();
       v.currentTime = 0;
-      updateScene(0);
+      handleScroll();
     };
 
-    /*
-      Make sure the video NEVER starts by itself.
-    */
     v.pause();
     v.currentTime = 0;
 
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
-
+    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleResize);
-
-    v.addEventListener(
-      "loadedmetadata",
-      handleLoadedMetadata
-    );
+    v.addEventListener("loadedmetadata", handleLoadedMetadata);
+    v.addEventListener("seeked", handleSeeked);
 
     handleScroll();
 
@@ -156,23 +147,20 @@ export default function App() {
       if (frame !== null) {
         cancelAnimationFrame(frame);
       }
-
-      window.removeEventListener(
-        "scroll",
-        handleScroll
-      );
-
-      window.removeEventListener(
-        "resize",
-        handleResize
-      );
-
-      v.removeEventListener(
-        "loadedmetadata",
-        handleLoadedMetadata
-      );
+      clearTimeout(seekTimeoutRef.current);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+      v.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      v.removeEventListener("seeked", handleSeeked);
     };
-  }, [updateScene]);
+  }, []);
+
+  const handleHintClick = () => {
+    if (track.current) {
+      const scrollableHeight = track.current.offsetHeight - window.innerHeight;
+      window.scrollTo({ top: scrollableHeight, behavior: "smooth" });
+    }
+  };
 
   return (
     <main className="track" ref={track}>
@@ -223,13 +211,15 @@ export default function App() {
           </div>
         </div>
 
-        <div
+        <button
+          type="button"
           ref={hint}
           className="scroll-hint"
-          aria-hidden="true"
+          onClick={handleHintClick}
+          aria-label="Scroll to open invitation"
         >
           {HINT}
-        </div>
+        </button>
       </section>
     </main>
   );

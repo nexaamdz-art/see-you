@@ -32,7 +32,7 @@ body {
 
 .track {
   position: relative;
-  height: 500vh;
+  height: 280vh;
   background: #000;
 }
 
@@ -247,6 +247,12 @@ body {
 
   z-index: 5;
 
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  outline: none;
+  cursor: pointer;
+
   color: rgba(255, 255, 255, 0.85);
 
   font-family: "Jost", sans-serif;
@@ -260,9 +266,15 @@ body {
 
   white-space: nowrap;
 
-  pointer-events: none;
+  pointer-events: auto;
+  user-select: none;
 
   will-change: opacity;
+  transition: color 0.2s ease;
+}
+
+.scroll-hint:hover {
+  color: #fff;
 }
 
 .scroll-hint::after {
