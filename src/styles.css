@@ -15,35 +15,46 @@ html,
 body,
 #root {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
+
   background: var(--bg);
 
-  font-family: "Jost", system-ui, sans-serif;
+  font-family:
+    "Jost",
+    system-ui,
+    sans-serif;
+
   font-weight: 300;
 }
 
 body {
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
-/* =====================================================
-   الصفحة
-   ===================================================== */
+/* =========================================
+   SCROLL TRACK
+========================================= */
 
-.page {
-  width: 100%;
-  height: 100vh;
-  height: 100svh;
+.track {
+  position: relative;
+
+  /*
+   الصفحة طويلة حتى يصبح
+   الـ scroll هو الـ timeline.
+  */
+  height: 500vh;
 
   background: var(--bg);
 }
 
-/* =====================================================
-   الفيديو
-   ===================================================== */
+/* =========================================
+   STICKY SCENE
+========================================= */
 
 .stage {
-  position: relative;
+  position: sticky;
+
+  top: 0;
 
   width: 100%;
   height: 100vh;
@@ -55,9 +66,11 @@ body {
   place-items: center;
 
   background: var(--bg);
-
-  touch-action: pan-y;
 }
+
+/* =========================================
+   VIDEO
+========================================= */
 
 .stage video {
   position: absolute;
@@ -70,6 +83,8 @@ body {
   object-fit: contain;
 
   z-index: 1;
+
+  pointer-events: none;
 }
 
 @media (max-width: 700px) {
@@ -78,14 +93,15 @@ body {
   }
 }
 
-/* =====================================================
-   الدعوة فوق الفيديو
-   ===================================================== */
+/* =========================================
+   INVITATION
+========================================= */
 
-.invitation-overlay {
+.invitation {
   position: absolute;
 
-  inset: 0;
+  left: 50%;
+  top: 50%;
 
   width: 100%;
   height: 100%;
@@ -94,41 +110,29 @@ body {
   place-items: center;
 
   opacity: 0;
-  visibility: hidden;
 
-  pointer-events: none;
+  /*
+   الحالة الأولى قبل الثانية 5
+  */
+  transform:
+    translate(-50%, -50%)
+    translateY(35px)
+    scale(0.92);
 
   z-index: 3;
 
-  transform: scale(0.92);
+  pointer-events: none;
 
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s cubic-bezier(.22, 1, .36, 1),
-    visibility 0s linear 0.7s;
+  will-change:
+    transform,
+    opacity;
 }
 
-/*
-   الدعوة تظهر في الثانية الخامسة
-*/
-.invitation-overlay.show {
-  opacity: 1;
+/* =========================================
+   INVITATION INNER
+========================================= */
 
-  visibility: visible;
-
-  transform: scale(1);
-
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s cubic-bezier(.22, 1, .36, 1),
-    visibility 0s linear 0s;
-}
-
-/* =====================================================
-   حركة الطفو
-   ===================================================== */
-
-.floating-invitation {
+.invitation-inner {
   position: relative;
 
   width: 100%;
@@ -137,49 +141,61 @@ body {
   display: grid;
   place-items: center;
 
-  animation: invitationFloat 4s ease-in-out infinite;
+  transform:
+    translateY(var(--float-y, 0px));
+
+  will-change: transform;
 }
 
-/*
-   حركة بسيطة جدًا للأعلى والأسفل
-*/
-@keyframes invitationFloat {
-  0% {
-    transform: translateY(0);
-  }
+/* =========================================
+   INVITATION IMAGE
+========================================= */
 
-  50% {
-    transform: translateY(-10px);
-  }
-
-  100% {
-    transform: translateY(0);
-  }
-}
-
-/* =====================================================
-   صورة الدعوة
-   ===================================================== */
-
-.floating-invitation > img {
+.invitation-inner > img {
   display: block;
 
-  /*
-     أكبر وأكثر وضوحًا
-  */
   width: 100%;
   height: 100%;
 
   object-fit: contain;
 
   filter:
-    drop-shadow(0 18px 35px rgba(0, 0, 0, 0.20))
-    drop-shadow(0 5px 12px rgba(120, 50, 80, 0.15));
+    drop-shadow(
+      0 25px 50px
+      rgba(0, 0, 0, 0.28)
+    );
+
+  /*
+   طفو ناعم مستمر
+  */
+  animation:
+    floatingInvitation
+    4s
+    ease-in-out
+    infinite;
 }
 
-/* =====================================================
-   النص
-   ===================================================== */
+@keyframes floatingInvitation {
+
+  0% {
+    transform:
+      translateY(0);
+  }
+
+  50% {
+    transform:
+      translateY(-8px);
+  }
+
+  100% {
+    transform:
+      translateY(0);
+  }
+}
+
+/* =========================================
+   INVITATION TEXT
+========================================= */
 
 .invite-text {
   position: absolute;
@@ -187,9 +203,10 @@ body {
   left: 50%;
   top: 50%;
 
-  transform: translate(-50%, -50%);
+  transform:
+    translate(-50%, -50%);
 
-  width: min(65%, 440px);
+  width: min(64%, 430px);
 
   display: flex;
 
@@ -205,36 +222,53 @@ body {
   pointer-events: none;
 }
 
-/* العنوان */
+/* =========================================
+   KICKER
+========================================= */
 
 .kicker {
-  font-size: clamp(11px, 3vw, 18px);
+  font-size:
+    clamp(11px, 3vw, 18px);
 
-  letter-spacing: 0.35em;
+  letter-spacing:
+    0.35em;
 
-  margin-right: -0.35em;
+  margin-right:
+    -0.35em;
 
-  color: var(--rose);
+  color:
+    var(--rose);
 }
 
-/* الاسم */
+/* =========================================
+   NAME
+========================================= */
 
 .name {
-  font-family: "Great Vibes", cursive;
+  font-family:
+    "Great Vibes",
+    cursive;
 
-  font-size: clamp(55px, 18vw, 120px);
+  font-size:
+    clamp(55px, 18vw, 120px);
 
-  line-height: 1.05;
+  line-height:
+    1.05;
 
-  margin-top: 2vw;
+  margin-top:
+    2vw;
 
-  color: var(--rose);
+  color:
+    var(--rose);
 
   text-shadow:
-    0 3px 10px rgba(181, 100, 127, 0.15);
+    0 3px 10px
+    rgba(181, 100, 127, 0.15);
 }
 
-/* السطر */
+/* =========================================
+   LINE
+========================================= */
 
 .line {
   font-family:
@@ -242,185 +276,177 @@ body {
     Georgia,
     serif;
 
-  font-style: italic;
+  font-style:
+    italic;
 
-  font-size: clamp(19px, 6vw, 40px);
+  font-size:
+    clamp(19px, 6vw, 40px);
 
-  margin-top: 1vw;
+  margin-top:
+    1vw;
 }
 
-/* الخط */
+/* =========================================
+   RULE
+========================================= */
 
 .rule {
   display: block;
 
-  width: 15vw;
+  width:
+    15vw;
 
-  height: 1px;
+  height:
+    1px;
 
-  background: var(--rose);
+  background:
+    var(--rose);
 
-  opacity: 0.6;
+  opacity:
+    0.6;
 
-  margin: 4vw 0;
+  margin:
+    4vw 0;
 }
 
-/* المعلومات */
+/* =========================================
+   INFO
+========================================= */
 
 .info {
-  font-size: clamp(12px, 3.6vw, 22px);
+  font-size:
+    clamp(12px, 3.6vw, 22px);
 
-  letter-spacing: 0.14em;
+  letter-spacing:
+    0.14em;
 
-  line-height: 1.9;
+  line-height:
+    1.9;
 }
 
-/* =====================================================
-   رسالة "اسحب للبدء"
-   ===================================================== */
+/* =========================================
+   SCROLL HINT
+========================================= */
 
-.start-hint {
+.scroll-hint {
   position: absolute;
 
   left: 50%;
-  bottom: 35px;
 
-  transform: translateX(-50%);
+  bottom:
+    max(
+      28px,
+      env(safe-area-inset-bottom)
+    );
+
+  transform:
+    translateX(-50%);
 
   z-index: 5;
 
-  display: flex;
+  color:
+    #F5F0EA;
 
-  flex-direction: column;
+  text-align:
+    center;
 
-  align-items: center;
+  font-size:
+    11px;
 
-  gap: 12px;
+  letter-spacing:
+    0.4em;
 
-  color: #F5F0EA;
+  white-space:
+    nowrap;
 
-  font-size: 12px;
-
-  letter-spacing: 0.25em;
-
-  white-space: nowrap;
-
-  opacity: 0.9;
-
-  animation: hintPulse 2.2s ease-in-out infinite;
+  transition:
+    opacity 0.3s ease;
 }
 
-.start-hint i {
+.scroll-hint i {
   display: block;
 
   width: 1px;
-  height: 42px;
+
+  height: 38px;
+
+  margin:
+    12px auto 0;
 
   background:
     linear-gradient(
-      to bottom,
       #F3D9E1,
       transparent
     );
 
-  animation: arrowMove 1.8s ease-in-out infinite;
+  animation:
+    scrollLine
+    2.2s
+    ease-in-out
+    infinite;
+
+  transform-origin:
+    top;
 }
 
-@keyframes hintPulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
+@keyframes scrollLine {
 
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes arrowMove {
   0% {
-    transform: translateY(-5px);
-    opacity: 0.2;
+    transform:
+      scaleY(0);
+
+    opacity:
+      0;
   }
 
-  50% {
-    transform: translateY(5px);
-    opacity: 1;
+  40% {
+    opacity:
+      1;
   }
 
   100% {
-    transform: translateY(-5px);
-    opacity: 0.2;
+    transform:
+      scaleY(1);
+
+    opacity:
+      0;
   }
 }
 
-/* =====================================================
-   التحميل
-   ===================================================== */
-
-.loader {
-  position: absolute;
-
-  inset: 0;
-
-  z-index: 10;
-
-  background: var(--bg);
-
-  display: grid;
-  place-items: center;
-
-  font-size: 28px;
-
-  color: #E8B8C7;
-
-  transition: opacity 1.2s ease;
-
-  pointer-events: none;
-}
-
-.loader.off {
-  opacity: 0;
-}
-
-/* =====================================================
-   الهاتف
-   ===================================================== */
+/* =========================================
+   MOBILE
+========================================= */
 
 @media (max-width: 700px) {
+
+  .track {
+    height: 500vh;
+  }
+
+  .stage video {
+    object-fit: cover;
+  }
+
   .invite-text {
     width: 68%;
   }
 
-  .floating-invitation > img {
-    width: 100%;
-    height: 100%;
-  }
-
-  .start-hint {
+  .scroll-hint {
     bottom: 28px;
   }
 }
 
-/* =====================================================
-   تقليل الحركة
-   ===================================================== */
+/* =========================================
+   REDUCED MOTION
+========================================= */
 
 @media (prefers-reduced-motion: reduce) {
-  .floating-invitation {
+
+  .invitation-inner > img {
     animation: none;
   }
 
-  .start-hint {
+  .scroll-hint i {
     animation: none;
-  }
-
-  .start-hint i {
-    animation: none;
-  }
-
-  .invitation-overlay,
-  .invitation-overlay.show {
-    transition: none;
   }
 }
