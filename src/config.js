@@ -5,7 +5,7 @@ export const CARD_IMAGE_PATH = "/assets/invitation.jpg";
 // Text shown inside the arch of the invitation card.
 export const INVITE = {
   kicker: "YOU ARE INVITED",
-  name: "Sara",
+  name: "Lina",
   line: "turns seven",
   date: "Friday, 15 May 2026",
   time: "6:00 PM",
