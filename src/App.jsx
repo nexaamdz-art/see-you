@@ -180,33 +180,35 @@ export default function App() {
           aria-hidden="true"
         >
           <div className="invitation-inner">
-            <img
-              src={CARD_IMAGE_PATH}
-              alt=""
-            />
+            <div className="invitation-floating-card">
+              <img
+                src={CARD_IMAGE_PATH}
+                alt=""
+              />
 
-            <div className="invitation-copy">
-              <p className="invitation-kicker">
-                {INVITE.kicker}
-              </p>
+              <div className="invitation-copy">
+                <p className="invitation-kicker">
+                  {INVITE.kicker}
+                </p>
 
-              <h1 className="invitation-name">
-                {INVITE.name}
-              </h1>
+                <h1 className="invitation-name">
+                  {INVITE.name}
+                </h1>
 
-              <p className="invitation-line">
-                {INVITE.line}
-              </p>
+                <p className="invitation-line">
+                  {INVITE.line}
+                </p>
 
-              <p className="invitation-date">
-                {INVITE.date}
-              </p>
+                <p className="invitation-date">
+                  {INVITE.date}
+                </p>
 
-              <p className="invitation-details">
-                {INVITE.time}
-                <br />
-                {INVITE.place}
-              </p>
+                <p className="invitation-details">
+                  {INVITE.time}
+                  <br />
+                  {INVITE.place}
+                </p>
+              </div>
             </div>
           </div>
         </div>

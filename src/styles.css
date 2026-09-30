@@ -120,7 +120,21 @@ body {
   will-change: transform;
 }
 
-.invitation-inner > img {
+.invitation-floating-card {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  animation: cardFloating 3.6s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+.invitation-floating-card > img {
   display: block;
 
   width: 100%;
@@ -131,24 +145,32 @@ body {
 
   pointer-events: none;
   user-select: none;
-
-  animation: invitationFloat 4.5s ease-in-out infinite;
-
-  will-change: transform;
 }
 
 /* =========================
-   FLOATING ANIMATION
+   FLOATING LEVITATION ANIMATION
    ========================= */
 
-@keyframes invitationFloat {
+@keyframes cardFloating {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0px) rotate(0deg);
+    filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.42));
   }
 
-  50% {
-    transform: translateY(-5px);
+  28% {
+    transform: translateY(-8px) rotate(-0.5deg);
+    filter: drop-shadow(0 26px 42px rgba(0, 0, 0, 0.36));
+  }
+
+  60% {
+    transform: translateY(-16px) rotate(0.6deg);
+    filter: drop-shadow(0 34px 54px rgba(0, 0, 0, 0.3));
+  }
+
+  84% {
+    transform: translateY(-6px) rotate(-0.2deg);
+    filter: drop-shadow(0 24px 38px rgba(0, 0, 0, 0.38));
   }
 }
 
@@ -471,7 +493,7 @@ body {
     scroll-behavior: auto;
   }
 
-  .invitation-inner > img,
+  .invitation-floating-card,
   .scroll-hint::after {
     animation: none;
   }
