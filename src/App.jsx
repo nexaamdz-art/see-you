@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import {
   VIDEO_PATH,
   CARD_IMAGE_PATH,
+  INVITATION_SOUND_PATH,
+  ENVELOPE_SOUND_PATH,
   INVITE,
   HINT,
 } from "./config.js";
@@ -16,6 +18,136 @@ const ease = (value) => {
   return t * t * (3 - 2 * t);
 };
 
+const playEnvelopeSynth = () => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    
+    if (!window._envelopeAudioCtx) {
+      window._envelopeAudioCtx = new AudioContext();
+    }
+    const ctx = window._envelopeAudioCtx;
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    const now = ctx.currentTime;
+
+    // 1. Paper friction / rustle sound (Filtered white noise)
+    const bufferSize = ctx.sampleRate * 0.7;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    }
+
+    const whiteNoise = ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1400, now);
+    filter.frequency.exponentialRampToValueAtTime(3200, now + 0.45);
+    filter.Q.setValueAtTime(3.5, now);
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(0.01, now);
+    gainNode.gain.linearRampToValueAtTime(0.4, now + 0.08);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+    whiteNoise.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    whiteNoise.start(now);
+    whiteNoise.stop(now + 0.7);
+
+    // 2. Envelope flap opening snap/pop (Oscillator + filtered noise)
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(240, now + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(90, now + 0.38);
+
+    oscGain.gain.setValueAtTime(0.01, now + 0.12);
+    oscGain.gain.linearRampToValueAtTime(0.25, now + 0.16);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+
+    osc.start(now + 0.12);
+    osc.stop(now + 0.45);
+
+  } catch (e) {
+    console.log("Audio play error:", e);
+  }
+};
+
+const playEnvelopeSound = () => {
+  try {
+    const audio = new Audio(ENVELOPE_SOUND_PATH);
+    audio.volume = 0.85;
+    audio.play().catch(() => {
+      playEnvelopeSynth();
+    });
+  } catch (e) {
+    playEnvelopeSynth();
+  }
+};
+
+const playWarmBellsSynth = () => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    
+    if (!window._envelopeAudioCtx) {
+      window._envelopeAudioCtx = new AudioContext();
+    }
+    const ctx = window._envelopeAudioCtx;
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    const now = ctx.currentTime;
+    const frequencies = [523.25, 659.25, 783.99, 1046.50];
+
+    frequencies.forEach((freq, index) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + index * 0.05);
+
+      const startTime = now + index * 0.05;
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(0.3 / frequencies.length, startTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.0);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + 2.1);
+    });
+  } catch (e) {
+    console.log("Bell synth error:", e);
+  }
+};
+
+const playInvitationSound = () => {
+  try {
+    const audio = new Audio(INVITATION_SOUND_PATH);
+    audio.volume = 0.8;
+    audio.play().catch(() => {
+      playWarmBellsSynth();
+    });
+  } catch (e) {
+    playWarmBellsSynth();
+  }
+};
+
 export default function App() {
   const track = useRef(null);
   const video = useRef(null);
@@ -25,6 +157,8 @@ export default function App() {
   const targetTimeRef = useRef(0);
   const isSeekingRef = useRef(false);
   const seekTimeoutRef = useRef(null);
+  const hasPlayedSound = useRef(false);
+  const hasPlayedInviteSound = useRef(false);
 
   useEffect(() => {
     const v = video.current;
@@ -75,6 +209,20 @@ export default function App() {
       targetTimeRef.current = currentTime;
 
       performSeek();
+
+      if (progress > 0.005 && !hasPlayedSound.current) {
+        hasPlayedSound.current = true;
+        playEnvelopeSound();
+      } else if (progress < 0.002) {
+        hasPlayedSound.current = false;
+      }
+
+      if (currentTime >= INVITE_START && !hasPlayedInviteSound.current) {
+        hasPlayedInviteSound.current = true;
+        playInvitationSound();
+      } else if (currentTime < INVITE_START - 0.5) {
+        hasPlayedInviteSound.current = false;
+      }
 
       if (invitation) {
         /*
@@ -156,6 +304,10 @@ export default function App() {
   }, []);
 
   const handleHintClick = () => {
+    if (!hasPlayedSound.current) {
+      hasPlayedSound.current = true;
+      playEnvelopeSound();
+    }
     if (track.current) {
       const scrollableHeight = track.current.offsetHeight - window.innerHeight;
       window.scrollTo({ top: scrollableHeight, behavior: "smooth" });
