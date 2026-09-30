@@ -18,132 +18,205 @@ const ease = (value) => {
   return t * t * (3 - 2 * t);
 };
 
-const playEnvelopeSynth = () => {
+// Global audio elements preloaded
+let envelopeAudio = null;
+let inviteAudio = null;
+
+const initAudioElements = () => {
+  if (typeof window === "undefined") return;
+  if (!envelopeAudio) {
+    envelopeAudio = new Audio(ENVELOPE_SOUND_PATH);
+    envelopeAudio.preload = "auto";
+    envelopeAudio.volume = 1.0;
+  }
+  if (!inviteAudio) {
+    inviteAudio = new Audio(INVITATION_SOUND_PATH);
+    inviteAudio.preload = "auto";
+    inviteAudio.volume = 1.0;
+  }
+};
+
+export const unlockAudio = () => {
+  try {
+    initAudioElements();
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      if (!window._envelopeAudioCtx) {
+        window._envelopeAudioCtx = new AudioContext();
+      }
+      if (window._envelopeAudioCtx.state === "suspended") {
+        window._envelopeAudioCtx.resume();
+      }
+    }
+  } catch (e) {
+    console.warn("Audio unlock note:", e);
+  }
+};
+
+const playEnvelopeSynth = async () => {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
-    
+
     if (!window._envelopeAudioCtx) {
       window._envelopeAudioCtx = new AudioContext();
     }
     const ctx = window._envelopeAudioCtx;
-    if (ctx.state === 'suspended') {
-      ctx.resume();
+    if (ctx.state === "suspended") {
+      await ctx.resume();
     }
 
     const now = ctx.currentTime;
 
-    // 1. Paper friction / rustle sound (Filtered white noise)
-    const bufferSize = ctx.sampleRate * 0.7;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(1.0, now);
+    master.connect(ctx.destination);
+
+    // 1. Tactile envelope flap seal release pop
+    const popOsc = ctx.createOscillator();
+    const popGain = ctx.createGain();
+    popOsc.type = "triangle";
+    popOsc.frequency.setValueAtTime(320, now);
+    popOsc.frequency.exponentialRampToValueAtTime(60, now + 0.16);
+    popGain.gain.setValueAtTime(0.55, now);
+    popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    popOsc.connect(popGain);
+    popGain.connect(master);
+    popOsc.start(now);
+    popOsc.stop(now + 0.2);
+
+    // 2. Paper sliding friction & rustle
+    const bufferSize = Math.floor(ctx.sampleRate * 0.9);
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
-      output[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      output[i] = (Math.random() * 2 - 1);
     }
 
     const whiteNoise = ctx.createBufferSource();
     whiteNoise.buffer = noiseBuffer;
 
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.frequency.setValueAtTime(1400, now);
-    filter.frequency.exponentialRampToValueAtTime(3200, now + 0.45);
-    filter.Q.setValueAtTime(3.5, now);
+    const filter1 = ctx.createBiquadFilter();
+    filter1.type = "bandpass";
+    filter1.frequency.setValueAtTime(1500, now);
+    filter1.frequency.exponentialRampToValueAtTime(2900, now + 0.45);
+    filter1.Q.setValueAtTime(2.0, now);
+
+    const filter2 = ctx.createBiquadFilter();
+    filter2.type = "bandpass";
+    filter2.frequency.setValueAtTime(3800, now);
+    filter2.Q.setValueAtTime(2.6, now);
 
     const gainNode = ctx.createGain();
     gainNode.gain.setValueAtTime(0.01, now);
-    gainNode.gain.linearRampToValueAtTime(0.4, now + 0.08);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+    gainNode.gain.linearRampToValueAtTime(0.9, now + 0.08);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
 
-    whiteNoise.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(ctx.destination);
+    whiteNoise.connect(filter1);
+    whiteNoise.connect(filter2);
+    filter1.connect(gainNode);
+    filter2.connect(gainNode);
+    gainNode.connect(master);
 
     whiteNoise.start(now);
-    whiteNoise.stop(now + 0.7);
-
-    // 2. Envelope flap opening snap/pop (Oscillator + filtered noise)
-    const osc = ctx.createOscillator();
-    const oscGain = ctx.createGain();
-    
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(240, now + 0.12);
-    osc.frequency.exponentialRampToValueAtTime(90, now + 0.38);
-
-    oscGain.gain.setValueAtTime(0.01, now + 0.12);
-    oscGain.gain.linearRampToValueAtTime(0.25, now + 0.16);
-    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
-
-    osc.connect(oscGain);
-    oscGain.connect(ctx.destination);
-
-    osc.start(now + 0.12);
-    osc.stop(now + 0.45);
-
+    whiteNoise.stop(now + 0.9);
   } catch (e) {
-    console.log("Audio play error:", e);
+    console.error("Envelope synth error:", e);
   }
 };
 
 const playEnvelopeSound = () => {
-  try {
-    const audio = new Audio(ENVELOPE_SOUND_PATH);
-    audio.volume = 0.85;
-    audio.play().catch(() => {
+  unlockAudio();
+  initAudioElements();
+
+  let played = false;
+  if (envelopeAudio) {
+    try {
+      envelopeAudio.currentTime = 0;
+      envelopeAudio.volume = 1.0;
+      const playPromise = envelopeAudio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            played = true;
+          })
+          .catch((err) => {
+            console.warn("Audio file blocked, using synthesized paper effect:", err);
+            playEnvelopeSynth();
+          });
+      }
+    } catch {
       playEnvelopeSynth();
-    });
-  } catch (e) {
+    }
+  } else {
     playEnvelopeSynth();
   }
+
+  // Backup trigger if audio element didn't produce sound quickly
+  setTimeout(() => {
+    if (!played && envelopeAudio && envelopeAudio.paused) {
+      playEnvelopeSynth();
+    }
+  }, 100);
 };
 
-const playWarmBellsSynth = () => {
+const playWarmBellsSynth = async () => {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
-    
+
     if (!window._envelopeAudioCtx) {
       window._envelopeAudioCtx = new AudioContext();
     }
     const ctx = window._envelopeAudioCtx;
-    if (ctx.state === 'suspended') {
-      ctx.resume();
+    if (ctx.state === "suspended") {
+      await ctx.resume();
     }
 
     const now = ctx.currentTime;
-    const frequencies = [523.25, 659.25, 783.99, 1046.50];
+    const frequencies = [523.25, 659.25, 783.99, 1046.5];
 
     frequencies.forEach((freq, index) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      
-      osc.type = 'sine';
+
+      osc.type = "sine";
       osc.frequency.setValueAtTime(freq, now + index * 0.05);
 
       const startTime = now + index * 0.05;
       gain.gain.setValueAtTime(0.001, startTime);
-      gain.gain.linearRampToValueAtTime(0.3 / frequencies.length, startTime + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.0);
+      gain.gain.linearRampToValueAtTime(0.5 / frequencies.length, startTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 2.2);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(startTime);
-      osc.stop(startTime + 2.1);
+      osc.stop(startTime + 2.3);
     });
   } catch (e) {
-    console.log("Bell synth error:", e);
+    console.error("Bell synth error:", e);
   }
 };
 
 const playInvitationSound = () => {
-  try {
-    const audio = new Audio(INVITATION_SOUND_PATH);
-    audio.volume = 0.8;
-    audio.play().catch(() => {
+  unlockAudio();
+  initAudioElements();
+
+  if (inviteAudio) {
+    try {
+      inviteAudio.currentTime = 0;
+      inviteAudio.volume = 1.0;
+      const playPromise = inviteAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          playWarmBellsSynth();
+        });
+      }
+    } catch {
       playWarmBellsSynth();
-    });
-  } catch (e) {
+    }
+  } else {
     playWarmBellsSynth();
   }
 };
@@ -159,6 +232,28 @@ export default function App() {
   const seekTimeoutRef = useRef(null);
   const hasPlayedSound = useRef(false);
   const hasPlayedInviteSound = useRef(false);
+
+  useEffect(() => {
+    initAudioElements();
+
+    const handleFirstGesture = () => {
+      unlockAudio();
+    };
+
+    window.addEventListener("pointerdown", handleFirstGesture, { passive: true });
+    window.addEventListener("touchstart", handleFirstGesture, { passive: true });
+    window.addEventListener("click", handleFirstGesture, { passive: true });
+    window.addEventListener("wheel", handleFirstGesture, { passive: true });
+    window.addEventListener("keydown", handleFirstGesture, { passive: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", handleFirstGesture);
+      window.removeEventListener("touchstart", handleFirstGesture);
+      window.removeEventListener("click", handleFirstGesture);
+      window.removeEventListener("wheel", handleFirstGesture);
+      window.removeEventListener("keydown", handleFirstGesture);
+    };
+  }, []);
 
   useEffect(() => {
     const v = video.current;
@@ -187,7 +282,6 @@ export default function App() {
         v.currentTime = target;
       }
 
-      // Safety fallback if 'seeked' event is delayed
       clearTimeout(seekTimeoutRef.current);
       seekTimeoutRef.current = setTimeout(() => {
         isSeekingRef.current = false;
@@ -210,6 +304,7 @@ export default function App() {
 
       performSeek();
 
+      // Trigger envelope flap opening & paper friction sound on initial scroll
       if (progress > 0.005 && !hasPlayedSound.current) {
         hasPlayedSound.current = true;
         playEnvelopeSound();
@@ -217,6 +312,7 @@ export default function App() {
         hasPlayedSound.current = false;
       }
 
+      // Trigger invitation appearance sound
       if (currentTime >= INVITE_START && !hasPlayedInviteSound.current) {
         hasPlayedInviteSound.current = true;
         playInvitationSound();
@@ -225,9 +321,6 @@ export default function App() {
       }
 
       if (invitation) {
-        /*
-          Invitation starts appearing at 5 seconds.
-        */
         const inviteProgress = clamp(
           (currentTime - INVITE_START) /
             Math.max(0.01, duration - INVITE_START)
@@ -304,6 +397,7 @@ export default function App() {
   }, []);
 
   const handleHintClick = () => {
+    unlockAudio();
     if (!hasPlayedSound.current) {
       hasPlayedSound.current = true;
       playEnvelopeSound();
