@@ -11,7 +11,10 @@ const INVITE_START = 5;
 const clamp = (value, min = 0, max = 1) =>
   Math.min(max, Math.max(min, value));
 
-const ease = (t) => t * t * (3 - 2 * t);
+const ease = (value) => {
+  const t = clamp(value);
+  return t * t * (3 - 2 * t);
+};
 
 export default function App() {
   const track = useRef(null);
@@ -19,17 +22,6 @@ export default function App() {
   const card = useRef(null);
   const hint = useRef(null);
 
-  const raf = useRef(null);
-  const targetProgress = useRef(0);
-  const lastProgress = useRef(-1);
-
-  /*
-   * تحديث المشهد بالكامل من الـ scroll.
-   *
-   * scroll progress:
-   * 0    -> بداية الفيديو
-   * 1    -> نهاية الفيديو
-   */
   const updateScene = useCallback((progress) => {
     const v = video.current;
     const invitation = card.current;
@@ -37,220 +29,133 @@ export default function App() {
 
     if (!v || !invitation) return;
 
-    progress = clamp(progress);
+    const duration = v.duration || 6;
 
     /*
-     * نستخدم مدة الفيديو الحقيقية.
-     * fallback فقط في حالة أن metadata لم تُحمّل بعد.
-     */
-    const duration =
-      Number.isFinite(v.duration) && v.duration > 0
-        ? v.duration
-        : 6;
+      Scroll = video timeline
+      0%   -> 0s
+      50%  -> 3s
+      80%  -> 4.8s
+      83.33% -> 5s
+      100% -> 6s
+    */
+    const currentTime = progress * duration;
 
-    /*
-     * SCROLL → VIDEO TIMELINE
-     *
-     * 0%     = 0s
-     * 50%    = 3s
-     * 83.33% = 5s
-     * 100%   = 6s
-     */
-    const currentTime = clamp(
-      progress * duration,
-      0,
-      duration
-    );
-
-    /*
-     * الفيديو لا يتم تشغيله.
-     * الـ scroll هو الذي يتحكم في currentTime.
-     */
-    if (
-      Math.abs(v.currentTime - currentTime) > 0.015 &&
-      v.readyState >= 1
-    ) {
-      v.currentTime = currentTime;
+    if (Math.abs(v.currentTime - currentTime) > 0.01) {
+      v.currentTime = Math.min(
+        currentTime,
+        Math.max(0, duration - 0.02)
+      );
     }
 
     /*
-     * الدعوة تبدأ بالظهور عند الثانية 5.
-     *
-     * إذا كان الفيديو 6 ثوانٍ:
-     * 5s -> 0
-     * 5.5s -> 0.5
-     * 6s -> 1
-     */
+      Invitation starts appearing at 5 seconds.
+    */
     const inviteProgress = clamp(
       (currentTime - INVITE_START) /
-        Math.max(0.001, duration - INVITE_START)
+        Math.max(0.01, duration - INVITE_START)
     );
 
     const reveal = ease(inviteProgress);
 
-    /*
-     * قبل الثانية 5:
-     * الدعوة مخفية تمامًا.
-     */
     invitation.style.opacity = reveal;
 
     /*
-     * دخول سينمائي:
-     * تبدأ من الأسفل قليلًا ثم تستقر.
-     */
+      Small movement while appearing.
+    */
     const translateY = (1 - reveal) * 35;
+
     const scale = 0.92 + reveal * 0.08;
 
-    invitation.style.transform =
-      `translate(-50%, -50%) ` +
-      `translateY(${translateY}px) ` +
-      `scale(${scale})`;
+    invitation.style.transform = `
+      translate(-50%, -50%)
+      translateY(${translateY}px)
+      scale(${scale})
+    `;
 
     /*
-     * حركة float إضافية مرتبطة بالـ timeline.
-     * CSS يقوم أيضًا بحركة float خفيفة مستمرة.
-     */
+      Small floating movement.
+    */
     const floatAmount =
       Math.sin(inviteProgress * Math.PI * 4) *
-      5 *
+      8 *
       reveal;
 
     invitation.style.setProperty(
-      "--scroll-float-y",
+      "--float-y",
       `${floatAmount}px`
     );
 
     /*
-     * إخفاء تعليمات SCROLL TO OPEN
-     * تدريجيًا بمجرد بدء التفاعل.
-     */
+      Hide scroll hint gradually.
+    */
     if (scrollHint) {
-      const hintOpacity = 1 - clamp(progress * 8);
-
-      scrollHint.style.opacity = hintOpacity;
+      scrollHint.style.opacity = String(
+        1 - clamp(progress * 8)
+      );
     }
   }, []);
 
-  /*
-   * حساب scroll progress الحقيقي.
-   */
-  const calculateProgress = useCallback(() => {
-    const element = track.current;
-
-    if (!element) return;
-
-    const rect = element.getBoundingClientRect();
-
-    /*
-     * المسافة التي يمكن أن يتحرك فيها الـ track
-     * أثناء وجود الـ sticky stage.
-     */
-    const scrollDistance =
-      element.offsetHeight - window.innerHeight;
-
-    if (scrollDistance <= 0) {
-      targetProgress.current = 0;
-      return;
-    }
-
-    /*
-     * عندما يكون top = 0:
-     * progress = 0
-     *
-     * عندما يصل scroll إلى نهاية track:
-     * progress = 1
-     */
-    const progress = clamp(
-      -rect.top / scrollDistance
-    );
-
-    targetProgress.current = progress;
-  }, []);
-
-  /*
-   * RAF:
-   * لا نريد تشغيل updateScene عشرات المرات
-   * مباشرة مع كل scroll event.
-   */
-  const requestUpdate = useCallback(() => {
-    if (raf.current !== null) return;
-
-    raf.current = requestAnimationFrame(() => {
-      raf.current = null;
-
-      calculateProgress();
-
-      const progress = targetProgress.current;
-
-      /*
-       * لا نعيد كتابة currentTime بدون داعٍ.
-       */
-      if (
-        Math.abs(progress - lastProgress.current) >
-        0.0001
-      ) {
-        lastProgress.current = progress;
-        updateScene(progress);
-      }
-    });
-  }, [calculateProgress, updateScene]);
-
-  /*
-   * تهيئة الفيديو.
-   */
   useEffect(() => {
     const v = video.current;
+    const t = track.current;
 
-    if (!v) return;
+    if (!v || !t) return;
 
-    /*
-     * مهم جدًا:
-     * الفيديو ليس فيديو autoplay.
-     * هو مجرد frame source للـ scroll timeline.
-     */
-    v.pause();
-    v.currentTime = 0;
-
-    const handleMetadata = () => {
-      v.pause();
-      v.currentTime = 0;
-      updateScene(targetProgress.current);
-    };
+    let frame = null;
 
     const handleScroll = () => {
-      requestUpdate();
+      if (frame !== null) return;
+
+      frame = requestAnimationFrame(() => {
+        frame = null;
+
+        const rect = t.getBoundingClientRect();
+
+        const scrollableHeight =
+          t.offsetHeight - window.innerHeight;
+
+        const progress = clamp(
+          -rect.top / Math.max(1, scrollableHeight)
+        );
+
+        updateScene(progress);
+      });
     };
 
     const handleResize = () => {
-      requestUpdate();
+      handleScroll();
     };
+
+    const handleLoadedMetadata = () => {
+      v.pause();
+      v.currentTime = 0;
+      updateScene(0);
+    };
+
+    /*
+      Make sure the video NEVER starts by itself.
+    */
+    v.pause();
+    v.currentTime = 0;
+
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
+
+    window.addEventListener("resize", handleResize);
 
     v.addEventListener(
       "loadedmetadata",
-      handleMetadata
+      handleLoadedMetadata
     );
 
-    window.addEventListener(
-      "scroll",
-      handleScroll,
-      { passive: true }
-    );
-
-    window.addEventListener(
-      "resize",
-      handleResize
-    );
-
-    /*
-     * الحالة الأولى.
-     */
-    requestUpdate();
+    handleScroll();
 
     return () => {
-      v.removeEventListener(
-        "loadedmetadata",
-        handleMetadata
-      );
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+      }
 
       window.removeEventListener(
         "scroll",
@@ -262,36 +167,25 @@ export default function App() {
         handleResize
       );
 
-      if (raf.current !== null) {
-        cancelAnimationFrame(raf.current);
-        raf.current = null;
-      }
+      v.removeEventListener(
+        "loadedmetadata",
+        handleLoadedMetadata
+      );
     };
-  }, [requestUpdate, updateScene]);
+  }, [updateScene]);
 
   return (
-    <main ref={track} className="track">
+    <main className="track" ref={track}>
       <section className="stage">
-        {/*
-         * VIDEO BACKGROUND
-         *
-         * لا autoplay
-         * لا controls
-         * لا loop
-         * الـ scroll هو الذي يتحكم فيه.
-         */}
         <video
           ref={video}
+          className="video"
           src={VIDEO_PATH}
           muted
           playsInline
           preload="auto"
-          aria-hidden="true"
         />
 
-        {/*
-         * INVITATION OVERLAY
-         */}
         <div
           ref={card}
           className="invitation"
@@ -303,39 +197,38 @@ export default function App() {
               alt=""
             />
 
-            <div className="invite-text">
-              <div className="kicker">
+            <div className="invitation-copy">
+              <p className="invitation-kicker">
                 {INVITE.kicker}
-              </div>
+              </p>
 
-              <div className="name">
+              <h1 className="invitation-name">
                 {INVITE.name}
-              </div>
+              </h1>
 
-              <div className="line">
+              <p className="invitation-line">
                 {INVITE.line}
-              </div>
+              </p>
 
-              <span className="rule" />
+              <p className="invitation-date">
+                {INVITE.date}
+              </p>
 
-              <div className="info">
-                <div>{INVITE.date}</div>
-                <div>{INVITE.time}</div>
-                <div>{INVITE.place}</div>
-              </div>
+              <p className="invitation-details">
+                {INVITE.time}
+                <br />
+                {INVITE.place}
+              </p>
             </div>
           </div>
         </div>
 
-        {/*
-         * SCROLL HINT
-         */}
         <div
           ref={hint}
           className="scroll-hint"
+          aria-hidden="true"
         >
-          <span>{HINT}</span>
-          <i />
+          {HINT}
         </div>
       </section>
     </main>
