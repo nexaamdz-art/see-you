@@ -2,12 +2,10 @@ import { useEffect, useRef } from "react";
 import {
   VIDEO_PATH,
   CARD_IMAGE_PATH,
-  AUDIO_PATH,
-  ENVELOPE_SOUND_PATH,
-  REVEAL_SOUND_PATH,
   INVITE,
   HINT,
 } from "./config.js";
+import { audioManager } from "./audioManager.js";
 
 const INVITE_START = 5;
 
@@ -24,9 +22,6 @@ export default function App() {
   const video = useRef(null);
   const card = useRef(null);
   const hint = useRef(null);
-  const audioRef = useRef(null);
-  const envelopeAudioRef = useRef(null);
-  const revealAudioRef = useRef(null);
 
   const hasPlayedFlapSoundRef = useRef(false);
   const hasPlayedRevealSoundRef = useRef(false);
@@ -36,49 +31,8 @@ export default function App() {
   const seekTimeoutRef = useRef(null);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.volume = 0.65;
-
-    const startAudio = () => {
-      if (audio.paused) {
-        audio.play().catch(() => {});
-      }
-    };
-
-    // Attempt autoplay immediately
-    startAudio();
-
-    // If browser blocks autoplay, activate seamlessly on first user gesture
-    const handleInteraction = () => {
-      startAudio();
-      if (envelopeAudioRef.current) {
-        envelopeAudioRef.current.load();
-      }
-      if (revealAudioRef.current) {
-        revealAudioRef.current.load();
-      }
-      removeInteractionListeners();
-    };
-
-    const removeInteractionListeners = () => {
-      window.removeEventListener("pointerdown", handleInteraction);
-      window.removeEventListener("keydown", handleInteraction);
-      window.removeEventListener("touchstart", handleInteraction);
-      window.removeEventListener("scroll", handleInteraction);
-      window.removeEventListener("wheel", handleInteraction);
-    };
-
-    window.addEventListener("pointerdown", handleInteraction, { passive: true });
-    window.addEventListener("keydown", handleInteraction, { passive: true });
-    window.addEventListener("touchstart", handleInteraction, { passive: true });
-    window.addEventListener("scroll", handleInteraction, { passive: true });
-    window.addEventListener("wheel", handleInteraction, { passive: true });
-
-    return () => {
-      removeInteractionListeners();
-    };
+    // Initialize mobile-optimized audio manager
+    audioManager.init();
   }, []);
 
   useEffect(() => {
@@ -166,14 +120,7 @@ export default function App() {
       // Play paper friction & envelope flap opening sound effect once in sync with flap opening
       if (currentTime >= 0.35 && !hasPlayedFlapSoundRef.current) {
         hasPlayedFlapSoundRef.current = true;
-        const envAudio = envelopeAudioRef.current;
-        if (envAudio) {
-          try {
-            envAudio.currentTime = 0;
-            envAudio.volume = 0.85;
-            envAudio.play().catch(() => {});
-          } catch {}
-        }
+        audioManager.playFlapSound();
       } else if (progress <= 0.02) {
         // Reset when user scrolls completely back to top
         hasPlayedFlapSoundRef.current = false;
@@ -182,14 +129,7 @@ export default function App() {
       // Play invitation reveal sound effect (sparkle chime) once when invitation appears
       if (currentTime >= INVITE_START && !hasPlayedRevealSoundRef.current) {
         hasPlayedRevealSoundRef.current = true;
-        const revAudio = revealAudioRef.current;
-        if (revAudio) {
-          try {
-            revAudio.currentTime = 0;
-            revAudio.volume = 0.85;
-            revAudio.play().catch(() => {});
-          } catch {}
-        }
+        audioManager.playRevealSound();
       } else if (currentTime < INVITE_START - 0.4) {
         // Reset if user scrolls back up
         hasPlayedRevealSoundRef.current = false;
@@ -243,9 +183,8 @@ export default function App() {
   }, []);
 
   const handleHintClick = () => {
-    if (audioRef.current && audioRef.current.paused) {
-      audioRef.current.play().catch(() => {});
-    }
+    audioManager.unlock();
+    audioManager.playBackgroundMusic();
     if (track.current) {
       const scrollableHeight = track.current.offsetHeight - window.innerHeight;
       window.scrollTo({ top: scrollableHeight, behavior: "smooth" });
@@ -253,33 +192,7 @@ export default function App() {
   };
 
   return (
-    <>
-      {/* Background audio playing continuously across the entire website */}
-      <audio
-        ref={audioRef}
-        src={AUDIO_PATH}
-        loop
-        preload="auto"
-        playsInline
-      />
-
-      {/* Envelope flap opening & paper friction sound effect */}
-      <audio
-        ref={envelopeAudioRef}
-        src={ENVELOPE_SOUND_PATH}
-        preload="auto"
-        playsInline
-      />
-
-      {/* Invitation reveal sound effect (magical warm bells / sparkle chime) */}
-      <audio
-        ref={revealAudioRef}
-        src={REVEAL_SOUND_PATH}
-        preload="auto"
-        playsInline
-      />
-
-      <main className="track" ref={track}>
+    <main className="track" ref={track}>
       <section className="stage">
         <video
           ref={video}
@@ -340,6 +253,5 @@ export default function App() {
         </button>
       </section>
     </main>
-    </>
   );
 }
