@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   VIDEO_PATH,
   CARD_IMAGE_PATH,
@@ -28,7 +28,6 @@ export default function App() {
   const envelopeAudioRef = useRef(null);
   const revealAudioRef = useRef(null);
 
-  const [isPlaying, setIsPlaying] = useState(false);
   const hasPlayedFlapSoundRef = useRef(false);
   const hasPlayedRevealSoundRef = useRef(false);
 
@@ -44,14 +43,7 @@ export default function App() {
 
     const startAudio = () => {
       if (audio.paused) {
-        audio
-          .play()
-          .then(() => {
-            setIsPlaying(true);
-          })
-          .catch(() => {
-            setIsPlaying(false);
-          });
+        audio.play().catch(() => {});
       }
     };
 
@@ -250,32 +242,9 @@ export default function App() {
     };
   }, []);
 
-  const toggleAudio = (e) => {
-    if (e) e.stopPropagation();
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      audio
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-        })
-        .catch((err) => {
-          console.warn("Could not play audio:", err);
-        });
-    }
-  };
-
   const handleHintClick = () => {
     if (audioRef.current && audioRef.current.paused) {
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {});
+      audioRef.current.play().catch(() => {});
     }
     if (track.current) {
       const scrollableHeight = track.current.offsetHeight - window.innerHeight;
@@ -292,8 +261,6 @@ export default function App() {
         loop
         preload="auto"
         playsInline
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
       />
 
       {/* Envelope flap opening & paper friction sound effect */}
@@ -311,61 +278,6 @@ export default function App() {
         preload="auto"
         playsInline
       />
-
-      {/* Floating Audio Controller */}
-      <button
-        type="button"
-        className={`audio-toggle-btn ${isPlaying ? "playing" : "paused"}`}
-        onClick={toggleAudio}
-        aria-label={isPlaying ? "Mute music" : "Play music"}
-        title={isPlaying ? "إيقاف الصوت" : "تشغيل الصوت"}
-      >
-        <span className="audio-icon-wrap" aria-hidden="true">
-          {isPlaying ? (
-            <svg
-              className="audio-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" fillOpacity="0.25" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-            </svg>
-          ) : (
-            <svg
-              className="audio-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <line x1="23" y1="9" x2="17" y2="15" />
-              <line x1="17" y1="9" x2="23" y2="15" />
-            </svg>
-          )}
-        </span>
-
-        <span
-          className={`audio-waves ${isPlaying ? "playing" : ""}`}
-          aria-hidden="true"
-        >
-          <span className="audio-wave-bar"></span>
-          <span className="audio-wave-bar"></span>
-          <span className="audio-wave-bar"></span>
-          <span className="audio-wave-bar"></span>
-        </span>
-
-        <span className="audio-label">
-          {isPlaying ? "Music" : "Muted"}
-        </span>
-      </button>
 
       <main className="track" ref={track}>
       <section className="stage">
