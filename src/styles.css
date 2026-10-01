@@ -217,10 +217,10 @@ body {
   opacity: 0.95;
 }
 
-/* Lina - smaller and elegant */
+/* Ritadj - smaller and elegant */
 
 .invitation-name {
-  margin: 5px 0 0;
+  margin: clamp(10px, 2.2cqi, 20px) 0 clamp(4px, 0.8cqi, 8px);
 
   font-family: "Great Vibes", "Amiri", cursive;
   font-size: clamp(30px, 9cqi, 58px);
@@ -232,7 +232,7 @@ body {
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
 
   position: relative;
-  top: 4px;
+  top: clamp(8px, 1.8cqi, 16px);
 }
 
 /* Happy Birthday message */

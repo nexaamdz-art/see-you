@@ -8,7 +8,7 @@ export const REVEAL_SOUND_PATH = "/assets/invitation-reveal.mp3";
 // Text shown inside the arch of the invitation card.
 export const INVITE = {
   kicker: "YOU ARE INVITED",
-  name: "Lina",
+  name: "Ritadj",
   line: "turns seven",
   date: "Friday, 15 May 2026",
   time: "6:00 PM",
