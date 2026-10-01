@@ -4,6 +4,7 @@ import {
   CARD_IMAGE_PATH,
   AUDIO_PATH,
   ENVELOPE_SOUND_PATH,
+  REVEAL_SOUND_PATH,
   INVITE,
   HINT,
 } from "./config.js";
@@ -25,9 +26,11 @@ export default function App() {
   const hint = useRef(null);
   const audioRef = useRef(null);
   const envelopeAudioRef = useRef(null);
+  const revealAudioRef = useRef(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const hasPlayedFlapSoundRef = useRef(false);
+  const hasPlayedRevealSoundRef = useRef(false);
 
   const targetTimeRef = useRef(0);
   const isSeekingRef = useRef(false);
@@ -60,6 +63,9 @@ export default function App() {
       startAudio();
       if (envelopeAudioRef.current) {
         envelopeAudioRef.current.load();
+      }
+      if (revealAudioRef.current) {
+        revealAudioRef.current.load();
       }
       removeInteractionListeners();
     };
@@ -180,6 +186,22 @@ export default function App() {
         // Reset when user scrolls completely back to top
         hasPlayedFlapSoundRef.current = false;
       }
+
+      // Play invitation reveal sound effect (sparkle chime) once when invitation appears
+      if (currentTime >= INVITE_START && !hasPlayedRevealSoundRef.current) {
+        hasPlayedRevealSoundRef.current = true;
+        const revAudio = revealAudioRef.current;
+        if (revAudio) {
+          try {
+            revAudio.currentTime = 0;
+            revAudio.volume = 0.85;
+            revAudio.play().catch(() => {});
+          } catch {}
+        }
+      } else if (currentTime < INVITE_START - 0.4) {
+        // Reset if user scrolls back up
+        hasPlayedRevealSoundRef.current = false;
+      }
     };
 
     const handleScroll = () => {
@@ -278,6 +300,14 @@ export default function App() {
       <audio
         ref={envelopeAudioRef}
         src={ENVELOPE_SOUND_PATH}
+        preload="auto"
+        playsInline
+      />
+
+      {/* Invitation reveal sound effect (magical warm bells / sparkle chime) */}
+      <audio
+        ref={revealAudioRef}
+        src={REVEAL_SOUND_PATH}
         preload="auto"
         playsInline
       />
